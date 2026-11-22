@@ -39,6 +39,22 @@ main.gestor { max-width: 1240px; display: grid; grid-template-columns: minmax(0,
 .lista-simples li { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
 .lateral { display: grid; gap: 16px; }
 .inativa { color: var(--suave); text-decoration: line-through; }
+.aluno-link { font: inherit; font-weight: 700; color: var(--marinho); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-decoration-color: var(--linha); text-underline-offset: 3px; }
+.aluno-link:hover { color: var(--verde); text-decoration-color: currentColor; }
+dialog.perfil { border: 0; border-radius: 18px; padding: 0; width: min(480px, calc(100vw - 32px)); background: var(--cartao); color: var(--texto); box-shadow: 0 20px 60px rgb(0 0 0 / .3); }
+dialog.perfil::backdrop { background: rgb(6 35 68 / .55); }
+.perfil-topo { display: grid; grid-template-columns: 64px 1fr auto; gap: 14px; align-items: center; padding: 20px 20px 12px; }
+.perfil-topo .avatar { width: 64px; height: 64px; font-size: 22px; }
+.perfil-topo h2 { margin: 0; font-size: 20px; color: var(--marinho); }
+.perfil-fechar { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--fundo); color: var(--marinho); font-size: 20px; cursor: pointer; }
+.perfil-corpo { padding: 0 20px 20px; display: grid; gap: 14px; }
+.perfil-numeros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.perfil-numeros div { background: var(--fundo); border-radius: 12px; padding: 10px; }
+.perfil-numeros strong { display: block; font-size: 18px; color: var(--marinho); }
+.perfil-numeros span { font-size: 12px; color: var(--suave); }
+.perfil-dados { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 14px; }
+.perfil-dados dt { color: var(--suave); }
+.perfil-dados dd { margin: 0; font-weight: 600; color: var(--marinho); overflow-wrap: anywhere; }
 </style>
 </head>
 <body>
@@ -199,7 +215,7 @@ function htmlEquipe(e) {
       <tbody>${membros.map((m) => {
         const [ct, cc] = COMPROVANTE[m.comprovante_situacao] ?? [m.comprovante_situacao, 'selo-espera'];
         return `<tr>
-          <td><div class="nome">${esc(m.nome || 'Sem nome')}${m.lider ? ' <span class="selo-lider">Líder</span>' : ''}</div><div class="suave">${esc(m.email)}</div></td>
+          <td><button class="aluno-link" data-perfil="${m.user_id}" data-equipe="${e.id}">${esc(m.nome || 'Sem nome')}</button>${m.lider ? ' <span class="selo-lider">Líder</span>' : ''}<div class="suave">${esc(m.email)}</div></td>
           <td style="white-space:nowrap">${m.cpf ? esc(m.cpf) : '<span class="faltam">falta</span>'}</td>
           <td>${m.ies_ok ? `<span class="selo selo-ok">${esc(m.ies_declarada)}</span>` : m.ies_declarada ? `<span class="selo selo-nao">${esc(m.ies_declarada)}</span>` : '<span class="faltam">não declarou</span>'}
             ${m.universidade_perfil ? `<div class="suave" title="O que o aluno pôs no perfil do BolsaLab">perfil: ${esc(m.universidade_perfil)}</div>` : ''}</td>
@@ -246,6 +262,48 @@ function htmlTestadores() {
   </section>`;
 }
 
+// ---------------------------------------------------------------- perfil do aluno
+const pct = (v) => v == null ? '–' : `${v > 0 ? '+' : ''}${Number(v).toFixed(2).replace('.', ',')}%`;
+async function abrirPerfil(userId, equipeId) {
+  const equipe = estado.equipes.find((e) => e.id === equipeId);
+  const m = (equipe?.integrantes ?? []).find((x) => x.user_id === userId) ?? {};
+  const d = document.createElement('dialog');
+  d.className = 'perfil';
+  d.setAttribute('aria-labelledby', 'perfil-nome');
+  d.innerHTML = '<p class="carregando">Carregando…</p>';
+  document.body.append(d);
+  d.addEventListener('close', () => d.remove());
+  d.addEventListener('click', (ev) => { if (ev.target === d) d.close(); });
+  d.showModal();
+  let p = {};
+  try { p = await rpc('perfil_publico', { p_user: userId }); } catch (e) { p = { erro: msgErro(e) }; }
+  const iniciais = esc((m.nome || '?').split(' ').map((x) => x[0]).slice(0, 2).join('').toUpperCase());
+  const criado = p.criado_em ? new Date(p.criado_em).toLocaleDateString('pt-BR') : '–';
+  d.innerHTML = `<div class="perfil-topo">
+      <span class="avatar">${p.foto_url ? `<img src="${esc(p.foto_url)}" alt="">` : iniciais}</span>
+      <div><h2 id="perfil-nome">${esc(p.nome || m.nome || 'Sem nome')}</h2>
+        <p class="suave">${esc(equipe?.nome ?? '')}${m.lider ? ' · líder' : ''}</p></div>
+      <button class="perfil-fechar" aria-label="Fechar">×</button>
+    </div>
+    <div class="perfil-corpo">
+      ${p.erro ? `<p class="erro">${esc(p.erro)}</p>` : `<div class="perfil-numeros">
+        <div><strong>${p.posicao ? `${p.posicao}º` : '–'}</strong><span>no ranking${p.participantes ? ` de ${p.participantes}` : ''}</span></div>
+        <div><strong>${pct(p.rentabilidade_pct)}</strong><span>rentabilidade</span></div>
+        <div><strong>${p.operacoes ?? 0}</strong><span>operações</span></div>
+      </div>`}
+      <dl class="perfil-dados">
+        <dt>E-mail</dt><dd>${esc(m.email)}</dd>
+        <dt>CPF</dt><dd>${esc(m.cpf || 'não informado')}</dd>
+        <dt>Desafio</dt><dd>${esc(m.curso)} · ${esc(m.periodo)} período · ${esc(m.ies_declarada || 'instituição não declarada')}</dd>
+        <dt>Perfil BolsaLab</dt><dd>${esc([p.curso, p.universidade].filter(Boolean).join(' · ') || 'sem curso e universidade')}</dd>
+        <dt>Conta desde</dt><dd>${criado}</dd>
+        <dt>Grupos</dt><dd>${esc((p.grupos ?? []).join(', ') || 'nenhum')}</dd>
+        <dt>Mais negociado</dt><dd>${p.favorito ? `${esc(p.favorito.ativo)} (${p.favorito.ordens} ordens)` : '–'}</dd>
+      </dl>
+    </div>`;
+  d.querySelector('.perfil-fechar').onclick = () => d.close();
+}
+
 // ---------------------------------------------------------------- ações
 async function acao(fazer, sucesso) {
   tela.querySelectorAll('button').forEach((b) => (b.disabled = true));
@@ -254,6 +312,7 @@ async function acao(fazer, sucesso) {
   await carregar();
 }
 function ligar() {
+  tela.querySelectorAll('[data-perfil]').forEach((b) => b.onclick = () => abrirPerfil(b.dataset.perfil, Number(b.dataset.equipe)));
   const busca = document.getElementById('busca');
   busca.oninput = () => { estado.busca = busca.value; const pos = busca.selectionStart; desenhar(); const n = document.getElementById('busca'); n.focus(); n.setSelectionRange(pos, pos); };
   document.getElementById('filtro').onchange = (ev) => { estado.filtro = ev.target.value; desenhar(); };
