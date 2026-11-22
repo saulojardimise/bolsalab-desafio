@@ -129,3 +129,8 @@ dialog.pergunta h2 { margin: 0 0 10px; font-size: 20px; color: var(--marinho); }
 dialog.pergunta p { margin: 0 0 10px; }
 .pergunta-botoes { display: grid; gap: 10px; margin-top: 16px; }
 .pergunta-botoes .botao-link { justify-self: center; margin-top: 2px; }
+/* campo de senha com o olho para mostrar ou esconder */
+.campo-senha { position: relative; display: block; }
+.campo-senha input { padding-right: 50px; }
+.campo-senha-olho { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; display: grid; place-items: center; border: 0; background: transparent; color: var(--suave); border-radius: 10px; cursor: pointer; }
+.campo-senha-olho:hover, .campo-senha-olho[aria-pressed="true"] { color: var(--verde); }
