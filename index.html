@@ -99,11 +99,11 @@ a:focus-visible { outline: 3px solid var(--verde); outline-offset: 3px; border-r
         <div><strong id="horas">–</strong><span>horas</span></div>
         <div><strong id="minutos">–</strong><span>minutos</span></div>
       </div>
-      <p class="contagem-rotulo" id="rotulo">PARA AS INSCRIÇÕES ABRIREM EM 1º/2</p>
+      <p class="contagem-rotulo" id="rotulo">PARA AS INSCRIÇÕES ABRIREM EM 01/02/2027</p>
       <ul class="datas">
-        <li><span>Inscrições</span><b>1/2 a 19/3</b></li>
-        <li><span>Desafio</span><b>29/3 a 31/8</b></li>
-        <li><span>Final (8 melhores)</span><b>17/9</b></li>
+        <li><span>Inscrições</span><b>01/02/2027 a 19/03/2027</b></li>
+        <li><span>Desafio</span><b>29/03/2027 a 31/08/2027</b></li>
+        <li><span>Final (8 melhores)</span><b>17/09/2027</b></li>
       </ul>
       <a class="botao" href="https://bolsalab.app/">Criar minha conta no BolsaLab</a>
       <p class="nota">Todos os integrantes precisam de conta. É gratuita.</p>
@@ -122,7 +122,7 @@ a:focus-visible { outline: 3px solid var(--verde); outline-offset: 3px; border-r
   var d = document.getElementById('dias'), h = document.getElementById('horas'), m = document.getElementById('minutos'), r = document.getElementById('rotulo');
   function passo() {
     var agora = Date.now(), alvo = agora < abre ? abre : fecha;
-    if (agora >= abre) r.textContent = agora < fecha ? 'PARA AS INSCRIÇÕES TERMINAREM EM 19/3' : 'INSCRIÇÕES ENCERRADAS';
+    if (agora >= abre) r.textContent = agora < fecha ? 'PARA AS INSCRIÇÕES TERMINAREM EM 19/03/2027' : 'INSCRIÇÕES ENCERRADAS';
     var resta = Math.max(0, alvo - agora);
     d.textContent = Math.floor(resta / 864e5);
     h.textContent = Math.floor(resta % 864e5 / 36e5);
