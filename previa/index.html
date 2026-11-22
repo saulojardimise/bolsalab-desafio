@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Inscrição · Desafio Carteira Recomendada 2027</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<style>
+@font-face { font-family: 'Jakarta'; src: url(../fontes/plus-jakarta-sans-latin-wght-normal.woff2) format('woff2'); font-weight: 200 800; font-display: swap; }
+@font-face { font-family: 'Jakarta'; src: url(../fontes/plus-jakarta-sans-latin-ext-wght-normal.woff2) format('woff2'); font-weight: 200 800; font-display: swap; unicode-range: U+0100-024F; }
+:root {
+  --fundo: #F5F7FB; --cartao: #FFFFFF; --marinho: #062344; --texto: #1C2B45; --suave: #5E6B82; --linha: #E6EBF2;
+  --verde: #007A5B; --verde-claro: #3DDCAA; --verde-fundo: #E2F4EE; --verde-texto: #006B50;
+  --ambar-fundo: #FFF6DB; --ambar-texto: #8A5A00; --vermelho: #C53030; --vermelho-fundo: #FDECEC; --campo: #FFFFFF;
+  --sombra: 0 1px 2px rgb(16 40 80 / .04), 0 6px 20px rgb(16 40 80 / .06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fundo: #0C1424; --cartao: #142036; --marinho: #E8EEF8; --texto: #DCE4F0; --suave: #9DAAC0; --linha: #24324D;
+    --verde: #2FC496; --verde-fundo: #12382F; --verde-texto: #8ED6BD; --ambar-fundo: #3A2E0F; --ambar-texto: #F5C451;
+    --vermelho: #F08080; --vermelho-fundo: #3A1A1D; --campo: #0F1A2E; --sombra: none;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--fundo); color: var(--texto); font-family: 'Jakarta', system-ui, sans-serif; font-size: 16px; line-height: 1.5; }
+a { color: var(--verde); }
+.topo { background: #062344; color: #fff; padding: 18px 16px 26px; }
+.topo-dentro { max-width: 640px; margin: 0 auto; }
+.topo-linha { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.topo img { height: 26px; display: block; }
+.topo h1 { margin: 18px 0 4px; font-size: clamp(24px, 6vw, 32px); line-height: 1.1; letter-spacing: -0.02em; }
+.topo h1 em { font-style: normal; color: #3DDCAA; }
+.topo p { margin: 0; color: #B9C7DD; }
+.faixa-teste { display: inline-block; font-size: 12px; font-weight: 800; letter-spacing: 1px; background: #F5C451; color: #062344; padding: 3px 10px; border-radius: 999px; }
+.sair { background: none; border: 1px solid rgba(255,255,255,.3); color: #fff; border-radius: 10px; padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; }
+main { max-width: 640px; margin: -12px auto 0; padding: 0 16px 48px; display: grid; gap: 16px; }
+.cartao { background: var(--cartao); border-radius: 18px; box-shadow: var(--sombra); padding: 20px; display: grid; gap: 14px; border: 1px solid var(--linha); }
+.cartao h2 { margin: 0; font-size: 19px; color: var(--marinho); }
+.cartao p { margin: 0; }
+.suave { color: var(--suave); font-size: 14px; }
+label { display: grid; gap: 6px; font-weight: 600; font-size: 14px; color: var(--marinho); }
+input, select { font: inherit; font-weight: 500; color: var(--texto); background: var(--campo); border: 1.5px solid var(--linha); border-radius: 12px; padding: 12px 14px; min-height: 48px; width: 100%; }
+input:focus, select:focus { outline: 3px solid color-mix(in srgb, var(--verde) 35%, transparent); border-color: var(--verde); }
+.dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.botao { font: inherit; font-weight: 800; border: 1.5px solid var(--linha); background: var(--cartao); color: var(--marinho); border-radius: 12px; min-height: 48px; padding: 0 18px; cursor: pointer; }
+.botao-principal { background: var(--verde); border-color: var(--verde); color: #fff; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .botao-principal { color: #062344; } }
+.botao-perigo { color: var(--vermelho); }
+.botao:disabled { opacity: .5; cursor: default; }
+.botao-link { background: none; border: 0; color: var(--verde); font: inherit; font-weight: 700; cursor: pointer; padding: 0; text-decoration: underline; }
+.erro { background: var(--vermelho-fundo); color: var(--vermelho); padding: 10px 14px; border-radius: 12px; font-weight: 600; font-size: 14px; }
+.ok { background: var(--verde-fundo); color: var(--verde-texto); padding: 10px 14px; border-radius: 12px; font-weight: 600; font-size: 14px; }
+.abas { display: grid; grid-template-columns: 1fr 1fr; background: var(--linha); border-radius: 12px; padding: 4px; gap: 4px; }
+.abas button { font: inherit; font-weight: 700; border: 0; border-radius: 9px; padding: 10px; background: none; color: var(--suave); cursor: pointer; }
+.abas button[aria-selected="true"] { background: var(--cartao); color: var(--marinho); box-shadow: var(--sombra); }
+.selo { display: inline-block; font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 999px; }
+.selo-ok { background: var(--verde-fundo); color: var(--verde-texto); }
+.selo-espera { background: var(--ambar-fundo); color: var(--ambar-texto); }
+.selo-nao { background: var(--vermelho-fundo); color: var(--vermelho); }
+.equipe-topo { display: flex; justify-content: space-between; align-items: start; gap: 12px; flex-wrap: wrap; }
+.codigo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--fundo); border: 1.5px dashed var(--linha); border-radius: 12px; padding: 12px 14px; }
+.codigo strong { font-size: 22px; letter-spacing: 2px; color: var(--marinho); font-variant-numeric: tabular-nums; }
+.integrantes { list-style: none; margin: 0; padding: 0; }
+.integrantes li { display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--linha); }
+.integrantes li:first-child { border-top: 0; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--verde-fundo); color: var(--verde-texto); display: grid; place-items: center; font-weight: 800; overflow: hidden; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.integrantes .nome { font-weight: 700; color: var(--marinho); }
+.acoes-membro { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.acoes-membro button { font-size: 13px; }
+.passos { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.passos li.feito { color: var(--suave); text-decoration: line-through; }
+.carregando { text-align: center; color: var(--suave); padding: 40px 0; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+@media (max-width: 480px) { .dupla { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="topo">
+  <div class="topo-dentro">
+    <div class="topo-linha">
+      <a href="https://bolsalab.app/"><img src="../logo.svg" alt="BolsaLab" width="122" height="26"></a>
+      <span id="topo-direita"></span>
+    </div>
+    <h1>Desafio Carteira <em>Recomendada</em> 2027</h1>
+    <p>Inscrição das equipes</p>
+  </div>
+</header>
+<main id="tela" aria-live="polite"><p class="carregando">Carregando…</p></main>
+
+<script src="supabase-2.118.0.js"></script>
+<script>
+// Área de inscrição do desafio (versão de teste: só testadores conseguem agir enquanto o desafio estiver fechado).
+// As regras de verdade estão no banco (migrações 053 e 054); esta página só chama as funções.
+const SUPABASE_URL = 'https://pvkhqfomfmhtdmvbzohq.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_BfV3fJAiDJQMpwXkD8vZRw_EBL-Z95n';   // chave pública
+const APP = 'https://bolsalab.app';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const tela = document.getElementById('tela');
+const topoDireita = document.getElementById('topo-direita');
+const params = new URLSearchParams(location.search);
+let estado = { sessao: null, situacao: null, equipe: null, ies: [], perfil: null, aba: params.get('codigo') ? 'entrar' : 'criar', recado: '' };
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const msgErro = (e) => (e?.message || 'Algo deu errado. Tente de novo.').replace(/^.*?ERROR:\s*/, '');
+
+async function rpc(nome, args) {
+  const { data, error } = await sb.rpc(nome, args);
+  if (error) throw error;
+  return data;
+}
+
+async function carregar() {
+  const { data: { session } } = await sb.auth.getSession();
+  estado.sessao = session;
+  if (!session) return desenhar();
+  try {
+    const [situacao, equipe, ies, perfil] = await Promise.all([
+      rpc('desafio_situacao'),
+      rpc('desafio_minha_equipe'),
+      sb.from('desafio_ies').select('id, nome, sigla').eq('ativa', true).order('nome').then((r) => r.data ?? []),
+      sb.from('perfis').select('nome, curso').eq('user_id', session.user.id).maybeSingle().then((r) => r.data),
+    ]);
+    Object.assign(estado, { situacao, equipe, ies, perfil });
+  } catch (e) {
+    estado.recado = msgErro(e);
+  }
+  desenhar();
+}
+
+function desenhar() {
+  const s = estado;
+  topoDireita.innerHTML = s.sessao
+    ? `${s.situacao?.testador && !s.situacao?.liberado ? '<span class="faixa-teste">MODO TESTE</span> ' : ''}<button class="sair" id="sair">Sair</button>`
+    : '';
+  document.getElementById('sair')?.addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
+
+  if (!s.sessao) return desenharEntrada();
+  const recado = s.recado ? `<p class="${s.recadoOk ? 'ok' : 'erro'}" role="alert">${esc(s.recado)}</p>` : '';
+  s.recado = ''; s.recadoOk = false;
+
+  const podeAgir = s.situacao && (s.situacao.testador || s.situacao.inscricoes_abertas);
+  if (s.equipe) { tela.innerHTML = recado + htmlEquipe(); ligarEquipe(); return; }
+  if (!podeAgir) {
+    const inicio = s.situacao ? new Date(s.situacao.inscricoes_inicio).toLocaleDateString('pt-BR') : '01/02/2027';
+    tela.innerHTML = recado + `<section class="cartao"><h2>As inscrições ainda não abriram</h2>
+      <p>As inscrições das equipes começam em <strong>${inicio}</strong>. Sua conta no BolsaLab já está pronta: quando abrir, é só voltar aqui.</p>
+      <p class="suave">Enquanto isso, treine no <a href="${APP}">simulador</a> e chame os colegas da equipe para criarem a conta deles.</p></section>`;
+    return;
+  }
+  tela.innerHTML = recado + htmlSemEquipe();
+  ligarSemEquipe();
+}
+
+// ---------------------------------------------------------------- entrar
+function desenharEntrada() {
+  tela.innerHTML = `<section class="cartao">
+    <h2>Entre com a sua conta do BolsaLab</h2>
+    <p class="suave">Só quem tem conta no BolsaLab participa. Use o mesmo e-mail e senha do app.</p>
+    <form id="form-entrar" class="cartao" style="padding:0;box-shadow:none;border:0">
+      <label>E-mail <input type="email" name="email" autocomplete="email" required></label>
+      <label>Senha <input type="password" name="senha" autocomplete="current-password" required></label>
+      <p id="erro-entrar" class="erro" role="alert" hidden></p>
+      <button class="botao botao-principal" type="submit">Entrar</button>
+    </form>
+    <p class="suave">Ainda não tem conta? <a href="${APP}">Crie no BolsaLab</a> e volte aqui. Esqueceu a senha? Recupere <a href="${APP}">pelo app</a>.</p>
+  </section>`;
+  document.getElementById('form-entrar').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const f = new FormData(ev.target), botao = ev.target.querySelector('button'), erro = document.getElementById('erro-entrar');
+    botao.disabled = true; erro.hidden = true;
+    const { error } = await sb.auth.signInWithPassword({ email: String(f.get('email')).trim(), password: String(f.get('senha')) });
+    botao.disabled = false;
+    if (error) { erro.textContent = /invalid/i.test(error.message) ? 'E-mail ou senha incorretos.' : msgErro(error); erro.hidden = false; return; }
+    tela.innerHTML = '<p class="carregando">Carregando…</p>';
+    carregar();
+  });
+}
+
+// ---------------------------------------------------------------- sem equipe
+function opcoesIes() {
+  return '<option value="">Escolha a sua instituição</option>' +
+    estado.ies.map((i) => `<option value="${i.id}">${esc(i.nome)}${i.sigla ? ` (${esc(i.sigla)})` : ''}</option>`).join('');
+}
+function camposAluno() {
+  return `<div class="dupla">
+    <label>Seu curso <input name="curso" maxlength="80" required value="${esc(estado.perfil?.curso ?? '')}" placeholder="Ex.: Economia"></label>
+    <label>Período <input name="periodo" maxlength="20" required placeholder="Ex.: 5º"></label>
+  </div>`;
+}
+function htmlSemEquipe() {
+  const criar = estado.aba === 'criar';
+  return `<section class="cartao">
+    <h2>Olá, ${esc((estado.perfil?.nome || '').split(' ')[0] || 'tudo bem')}!</h2>
+    <p>Equipes de <strong>3 a 5 alunos da mesma instituição</strong>. Uma pessoa cria a equipe e vira líder; os colegas entram com o código.</p>
+    <div class="abas" role="tablist">
+      <button role="tab" aria-selected="${criar}" data-aba="criar">Criar equipe</button>
+      <button role="tab" aria-selected="${!criar}" data-aba="entrar">Tenho um código</button>
+    </div>
+    ${criar ? `<form id="form-criar" class="cartao" style="padding:0;box-shadow:none;border:0">
+        <label>Nome da equipe <input name="nome" maxlength="30" required placeholder="Até 30 caracteres"></label>
+        <label>Instituição <select name="ies" required>${opcoesIes()}</select></label>
+        ${camposAluno()}
+        <p class="suave">Você será o líder: é quem envia a carteira todo mês.</p>
+        <button class="botao botao-principal" type="submit">Criar equipe</button>
+      </form>`
+    : `<form id="form-entrar-equipe" class="cartao" style="padding:0;box-shadow:none;border:0">
+        <label>Código da equipe <input name="codigo" required placeholder="Ex.: K7QM-3XPA" autocapitalize="characters" value="${esc(params.get('codigo') ?? '')}"></label>
+        ${camposAluno()}
+        <button class="botao botao-principal" type="submit">Entrar na equipe</button>
+      </form>`}
+  </section>`;
+}
+function ligarSemEquipe() {
+  tela.querySelectorAll('[data-aba]').forEach((b) => b.addEventListener('click', () => { estado.aba = b.dataset.aba; desenhar(); }));
+  enviar('form-criar', (f) => rpc('desafio_criar_equipe', { p_nome: f.get('nome'), p_ies_id: Number(f.get('ies')) || null, p_curso: f.get('curso'), p_periodo: f.get('periodo') }), 'Equipe criada! Agora convide os colegas com o código.');
+  enviar('form-entrar-equipe', (f) => rpc('desafio_entrar_equipe', { p_codigo: f.get('codigo'), p_curso: f.get('curso'), p_periodo: f.get('periodo') }), 'Você entrou na equipe!');
+}
+
+// ---------------------------------------------------------------- com equipe
+const SITUACAO = {
+  formando: ['Em formação', 'selo-espera'], aprovada: ['Aprovada', 'selo-ok'], recusada: ['Recusada', 'selo-nao'],
+};
+const COMPROVANTE = {
+  pendente: ['Falta o comprovante', 'selo-espera'], enviado: ['Comprovante em análise', 'selo-espera'],
+  aprovado: ['Comprovante aprovado', 'selo-ok'], recusado: ['Comprovante recusado', 'selo-nao'],
+};
+function htmlEquipe() {
+  const e = estado.equipe, eu = estado.sessao.user.id;
+  const membros = e.integrantes ?? [];
+  const meu = membros.find((m) => m.user_id === eu);
+  const [sit, sitClasse] = SITUACAO[e.situacao] ?? [e.situacao, 'selo-espera'];
+  const link = `${location.origin}${location.pathname}?codigo=${encodeURIComponent(e.codigo)}`;
+  const qtd = membros.length, comprovantesOk = membros.filter((m) => m.comprovante === 'aprovado').length;
+  const passos = [
+    [qtd >= 3, `Ter de 3 a 5 integrantes (agora: ${qtd})`],
+    [membros.every((m) => m.comprovante !== 'pendente'), 'Todos enviarem o comprovante de matrícula'],
+    [comprovantesOk === qtd, 'A organização aprovar os comprovantes'],
+    [e.situacao === 'aprovada', 'A organização aprovar a equipe'],
+  ];
+  return `<section class="cartao">
+    <div class="equipe-topo">
+      <div><h2>${esc(e.nome)}</h2><p class="suave">${esc(e.ies)}</p></div>
+      <span class="selo ${sitClasse}">${sit}</span>
+    </div>
+    ${e.situacao === 'recusada' && e.motivo ? `<p class="erro">Motivo: ${esc(e.motivo)}</p>` : ''}
+    ${e.situacao === 'aprovada' ? '<p class="ok">Equipe aprovada! A carteira de abril é enviada de 22 a 31/03/2027.</p>' : `
+    <div><p style="font-weight:700;color:var(--marinho)">Para a equipe ser aprovada:</p>
+      <ol class="passos">${passos.map(([feito, t]) => `<li class="${feito ? 'feito' : ''}">${t}</li>`).join('')}</ol></div>`}
+    ${qtd < 5 && e.situacao !== 'recusada' ? `<div>
+      <p style="font-weight:700;color:var(--marinho);margin-bottom:6px">Convide os colegas</p>
+      <div class="codigo"><strong>${esc(e.codigo)}</strong>
+        <button class="botao" id="copiar-link" type="button">Copiar convite</button></div>
+      <p class="suave" style="margin-top:6px">Eles precisam ter conta no BolsaLab, da mesma instituição.</p>
+    </div>` : ''}
+  </section>
+
+  <section class="cartao">
+    <h2>Integrantes (${qtd} de 5)</h2>
+    <ul class="integrantes">${membros.map((m) => {
+      const [ct, cc] = COMPROVANTE[m.comprovante] ?? [m.comprovante, 'selo-espera'];
+      const iniciais = esc((m.nome || '?').split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase());
+      return `<li>
+        <span class="avatar">${m.foto ? `<img src="${esc(m.foto)}" alt="">` : iniciais}</span>
+        <div><div class="nome">${esc(m.nome || 'Sem nome')}${m.lider ? ' · líder' : ''}${m.user_id === eu ? ' (você)' : ''}</div>
+          <div class="suave">${esc(m.curso)} · ${esc(m.periodo)} período</div>
+          ${e.eu_lider && m.user_id !== eu ? `<div class="acoes-membro">
+            <button class="botao-link" data-lider="${m.user_id}">Passar liderança</button>
+            <button class="botao-link botao-perigo" data-remover="${m.user_id}">Remover</button></div>` : ''}
+        </div>
+        <span class="selo ${cc}">${ct}</span>
+      </li>`; }).join('')}</ul>
+  </section>
+
+  <section class="cartao">
+    <h2>Seu comprovante de matrícula</h2>
+    <p>${meu?.comprovante === 'pendente' ? 'Envie um comprovante de matrícula de 2027 (PDF, JPG ou PNG, até 5 MB).'
+        : meu?.comprovante === 'recusado' ? 'Seu comprovante foi recusado. Envie outro, legível e do semestre atual.'
+        : 'Comprovante enviado. Se precisar, você pode trocar por outro.'}</p>
+    <label>Arquivo <input type="file" id="arquivo" accept="application/pdf,image/jpeg,image/png"></label>
+    <button class="botao botao-principal" id="enviar-comprovante" type="button">Enviar comprovante</button>
+  </section>
+
+  <section class="cartao">
+    <h2>Sair da equipe</h2>
+    <p class="suave">${e.eu_lider && qtd > 1 ? 'Você é o líder: passe a liderança para outro integrante antes de sair.' : qtd === 1 ? 'Você é o único integrante: ao sair, a equipe deixa de existir.' : 'Você pode sair enquanto as inscrições estiverem abertas.'}</p>
+    <button class="botao botao-perigo" id="sair-equipe" type="button" ${e.eu_lider && qtd > 1 ? 'disabled' : ''}>Sair da equipe</button>
+  </section>`;
+}
+function ligarEquipe() {
+  const e = estado.equipe;
+  document.getElementById('copiar-link')?.addEventListener('click', async (ev) => {
+    const link = `${location.origin}${location.pathname}?codigo=${encodeURIComponent(e.codigo)}`;
+    const texto = `Entre na minha equipe "${e.nome}" no Desafio Carteira Recomendada 2027: ${link} (código ${e.codigo})`;
+    try { await navigator.clipboard.writeText(texto); ev.target.textContent = 'Copiado!'; }
+    catch { prompt('Copie o convite:', texto); }
+  });
+  tela.querySelectorAll('[data-lider]').forEach((b) => b.addEventListener('click', () =>
+    confirmarDuasVezes(b, 'Confirmar?', () => acao(() => rpc('desafio_passar_lideranca', { p_user_id: b.dataset.lider }), 'Liderança passada.'))));
+  tela.querySelectorAll('[data-remover]').forEach((b) => b.addEventListener('click', () =>
+    confirmarDuasVezes(b, 'Confirmar remoção?', () => acao(() => rpc('desafio_remover_integrante', { p_user_id: b.dataset.remover }), 'Integrante removido.'))));
+  const sair = document.getElementById('sair-equipe');
+  sair?.addEventListener('click', () => confirmarDuasVezes(sair, 'Toque de novo para sair', () => acao(() => rpc('desafio_sair_equipe'), 'Você saiu da equipe.')));
+  document.getElementById('enviar-comprovante')?.addEventListener('click', enviarComprovante);
+}
+
+async function enviarComprovante() {
+  const arquivo = document.getElementById('arquivo').files[0];
+  if (!arquivo) { estado.recado = 'Escolha o arquivo do comprovante.'; return desenhar(); }
+  if (arquivo.size > 5 * 1024 * 1024) { estado.recado = 'O arquivo passa de 5 MB.'; return desenhar(); }
+  const ext = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png' }[arquivo.type];
+  if (!ext) { estado.recado = 'Envie PDF, JPG ou PNG.'; return desenhar(); }
+  const caminho = `${estado.sessao.user.id}/comprovante-${Date.now()}.${ext}`;
+  await acao(async () => {
+    const { error } = await sb.storage.from('desafio-comprovantes').upload(caminho, arquivo, { contentType: arquivo.type });
+    if (error) throw error;
+    await rpc('desafio_registrar_comprovante', { p_caminho: caminho });
+  }, 'Comprovante enviado. A organização vai conferir.');
+}
+
+// ---------------------------------------------------------------- utilidades
+function confirmarDuasVezes(botao, texto, fazer) {
+  if (botao.dataset.confirmar) return fazer();
+  botao.dataset.confirmar = '1'; botao.dataset.original = botao.textContent; botao.textContent = texto;
+  setTimeout(() => { if (botao.isConnected) { delete botao.dataset.confirmar; botao.textContent = botao.dataset.original; } }, 4000);
+}
+async function acao(fazer, sucesso) {
+  tela.querySelectorAll('button').forEach((b) => (b.disabled = true));
+  try { await fazer(); estado.recado = sucesso; estado.recadoOk = true; }
+  catch (e) { estado.recado = msgErro(e); }
+  await carregar();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function enviar(id, chamar, sucesso) {
+  document.getElementById(id)?.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const f = new FormData(ev.target);
+    acao(() => chamar(f), sucesso);
+  });
+}
+
+sb.auth.onAuthStateChange((evento) => { if (evento === 'SIGNED_OUT') location.reload(); });
+carregar();
+</script>
+</body>
+</html>
