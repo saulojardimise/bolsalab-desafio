@@ -21,43 +21,57 @@
 :root { --marinho: #062344; --verde: #3DDCAA; --texto: #E8EEF8; --suave: #B9C7DD; --apagado: #8FA3C0; }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
-body { min-height: 100vh; background: var(--marinho); color: #fff; font-family: 'Jakarta', system-ui, sans-serif; overflow-x: hidden; }
-.fundo { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+body { background: var(--marinho); color: #fff; font-family: 'Jakarta', system-ui, sans-serif; overflow-x: hidden; }
+.fundo { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
 .fundo::before, .fundo::after { content: ''; position: absolute; border-radius: 50%; filter: blur(90px); }
 .fundo::before { width: 620px; height: 620px; right: -180px; top: -200px; background: #0F6B52; opacity: .55; }
 .fundo::after { width: 560px; height: 560px; left: -240px; bottom: -220px; background: #1B4C96; opacity: .5; }
 .grade { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .05; background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 56px 56px; }
-.pagina { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 28px 24px 40px; min-height: 100vh; display: flex; flex-direction: column; }
-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-header img { height: 30px; width: auto; display: block; }
+/* tudo cabe em uma tela: altura da janela, tamanhos que encolhem com ela */
+.pagina { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: clamp(14px, 3vh, 28px) 24px clamp(10px, 2.2vh, 22px); height: 100vh; height: 100dvh; min-height: 520px; display: flex; flex-direction: column; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+header img { height: clamp(22px, 3.6vh, 30px); width: auto; display: block; }
 header a.app { color: var(--suave); font-weight: 600; font-size: 15px; text-decoration: none; }
 header a.app:hover { color: #fff; }
-main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 56px 0 40px; }
-.selo { display: inline-block; align-self: flex-start; font-size: 13px; font-weight: 800; letter-spacing: 2px; color: var(--marinho); background: var(--verde); padding: 7px 14px; border-radius: 999px; }
-h1 { margin: 22px 0 0; font-size: clamp(42px, 8vw, 84px); line-height: 1.02; font-weight: 800; letter-spacing: -0.03em; }
+main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); gap: clamp(24px, 4vw, 64px); align-items: center; }
+.selo { display: inline-block; font-size: 12px; font-weight: 800; letter-spacing: 2px; color: var(--marinho); background: var(--verde); padding: 6px 13px; border-radius: 999px; }
+h1 { margin: clamp(10px, 2.2vh, 22px) 0 0; font-size: clamp(34px, min(6vw, 10.5vh), 84px); line-height: 1.02; font-weight: 800; letter-spacing: -0.03em; }
 h1 em { font-style: normal; color: var(--verde); }
-.breve { margin: 18px 0 0; font-size: clamp(22px, 3.4vw, 30px); font-weight: 700; color: var(--texto); }
-.lead { margin: 18px 0 0; max-width: 640px; font-size: clamp(17px, 2.2vw, 20px); line-height: 1.55; color: var(--suave); }
-.contagem { margin-top: 36px; display: flex; gap: 12px; flex-wrap: wrap; }
-.contagem div { min-width: 104px; padding: 16px 18px; border-radius: 16px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); text-align: center; }
-.contagem strong { display: block; font-size: 38px; font-weight: 800; line-height: 1.1; }
-.contagem span { font-size: 13px; color: var(--suave); }
-.contagem-rotulo { margin: 14px 0 0; font-size: 14px; font-weight: 700; letter-spacing: 1px; color: #8ED6BD; }
-.datas { margin-top: 44px; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
-.datas div { padding: 18px 20px; border-radius: 16px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); }
-.datas b { display: block; font-size: 15px; color: var(--verde); }
-.datas p { margin: 6px 0 0; font-size: 16px; line-height: 1.45; color: var(--texto); }
-.acoes { margin-top: 40px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
-.botao { display: inline-block; background: var(--verde); color: var(--marinho); font-weight: 800; font-size: 17px; padding: 15px 26px; border-radius: 14px; text-decoration: none; }
+.breve { margin: clamp(8px, 1.8vh, 18px) 0 0; font-size: clamp(20px, 3.6vh, 30px); font-weight: 700; color: var(--texto); }
+.lead { margin: clamp(8px, 1.6vh, 16px) 0 0; max-width: 600px; font-size: clamp(15px, 2.5vh, 19px); line-height: 1.5; color: var(--suave); }
+.painel { padding: clamp(16px, 3vh, 28px); border-radius: 22px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); }
+.contagem { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.contagem div { padding: clamp(8px, 1.6vh, 14px) 8px; border-radius: 14px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); text-align: center; }
+.contagem strong { display: block; font-size: clamp(24px, 4.6vh, 38px); font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.contagem span { font-size: 12px; color: var(--suave); }
+.contagem-rotulo { margin: clamp(6px, 1.3vh, 12px) 0 0; font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #8ED6BD; text-align: center; }
+.datas { margin: clamp(10px, 2.4vh, 22px) 0 0; padding: 0; list-style: none; }
+.datas li { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; padding: clamp(6px, 1.3vh, 11px) 0; border-top: 1px solid rgba(255,255,255,.1); font-size: clamp(14px, 2.2vh, 16px); color: var(--texto); }
+.datas b { color: var(--verde); white-space: nowrap; }
+.botao { display: block; text-align: center; margin-top: clamp(10px, 2.2vh, 20px); background: var(--verde); color: var(--marinho); font-weight: 800; font-size: clamp(15px, 2.3vh, 17px); padding: clamp(11px, 2vh, 15px) 20px; border-radius: 14px; text-decoration: none; }
 .botao:hover { background: #8ED6BD; }
-.acoes p { margin: 0; font-size: 15px; color: var(--suave); max-width: 420px; }
-footer { font-size: 14px; color: var(--apagado); display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; border-top: 1px solid rgba(255,255,255,.1); padding-top: 20px; }
+.nota { margin: clamp(6px, 1.2vh, 10px) 0 0; font-size: 13px; line-height: 1.4; color: var(--suave); text-align: center; }
+footer { font-size: 13px; color: var(--apagado); display: flex; flex-wrap: wrap; gap: 4px 24px; justify-content: space-between; border-top: 1px solid rgba(255,255,255,.1); padding-top: clamp(8px, 1.6vh, 14px); }
 a:focus-visible { outline: 3px solid var(--verde); outline-offset: 3px; border-radius: 6px; }
+/* celular: uma coluna, mais enxuta */
+@media (max-width: 860px) {
+  .pagina { min-height: 560px; padding-left: 16px; padding-right: 16px; }
+  header a.app { font-size: 14px; }
+  main { grid-template-columns: 1fr; align-content: safe center; gap: clamp(12px, 2.4vh, 22px); }
+  h1 { font-size: clamp(28px, min(9.6vw, 5.4vh), 48px); }
+  .breve { font-size: clamp(17px, 2.8vh, 22px); }
+  .lead { font-size: clamp(14px, 2vh, 16px); }
+  .painel { padding: clamp(12px, 2vh, 18px); }
+  .contagem strong { font-size: clamp(22px, 3.8vh, 30px); }
+  .datas li { font-size: 14px; }
+  footer { font-size: 12px; }
+  footer span + span { display: none; }
+}
+@media (max-width: 860px) and (max-height: 860px) { .lead { display: none; } }
+@media (max-width: 860px) and (max-height: 640px) { .nota { display: none; } }
 @media (prefers-reduced-motion: no-preference) {
   main > * { animation: sobe .7s cubic-bezier(.2,.8,.2,1) both; }
-  main > *:nth-child(2) { animation-delay: .06s; } main > *:nth-child(3) { animation-delay: .12s; }
-  main > *:nth-child(4) { animation-delay: .18s; } main > *:nth-child(5) { animation-delay: .24s; }
-  main > *:nth-child(6) { animation-delay: .3s; } main > *:nth-child(7) { animation-delay: .36s; }
+  main > *:nth-child(2) { animation-delay: .12s; }
   @keyframes sobe { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 }
 </style>
@@ -72,29 +86,27 @@ a:focus-visible { outline: 3px solid var(--verde); outline-offset: 3px; border-r
   </header>
 
   <main>
-    <span class="selo">CAMPOS DOS GOYTACAZES · 2027</span>
-    <h1>Desafio Carteira <em>Recomendada</em> 2027</h1>
-    <p class="breve">Em breve</p>
-    <p class="lead">Equipes de 3 a 5 universitários de Campos dos Goytacazes montam uma carteira recomendada, defendem cada escolha por escrito e disputam com os preços reais da B3. As 8 melhores vão para a final.</p>
-
     <div>
+      <span class="selo">CAMPOS DOS GOYTACAZES · 2027</span>
+      <h1>Desafio Carteira <em>Recomendada</em> 2027</h1>
+      <p class="breve">Em breve</p>
+      <p class="lead">Equipes de 3 a 5 universitários de Campos dos Goytacazes montam uma carteira recomendada, defendem cada escolha por escrito e disputam com os preços reais da B3. As 8 melhores vão para a final.</p>
+    </div>
+
+    <div class="painel">
       <div class="contagem" role="timer" aria-live="off" aria-label="Tempo até a abertura das inscrições">
         <div><strong id="dias">–</strong><span>dias</span></div>
         <div><strong id="horas">–</strong><span>horas</span></div>
         <div><strong id="minutos">–</strong><span>minutos</span></div>
       </div>
-      <p class="contagem-rotulo" id="rotulo">PARA AS INSCRIÇÕES ABRIREM EM 1º DE FEVEREIRO</p>
-    </div>
-
-    <div class="datas">
-      <div><b>1/2 a 19/3/2027</b><p>Inscrições das equipes</p></div>
-      <div><b>29/3 a 31/8/2027</b><p>Desafio, com rebalanceamento mensal</p></div>
-      <div><b>17/9/2027</b><p>Final com as 8 melhores equipes</p></div>
-    </div>
-
-    <div class="acoes">
+      <p class="contagem-rotulo" id="rotulo">PARA AS INSCRIÇÕES ABRIREM EM 1º/2</p>
+      <ul class="datas">
+        <li><span>Inscrições</span><b>1/2 a 19/3</b></li>
+        <li><span>Desafio</span><b>29/3 a 31/8</b></li>
+        <li><span>Final (8 melhores)</span><b>17/9</b></li>
+      </ul>
       <a class="botao" href="https://bolsalab.app/">Criar minha conta no BolsaLab</a>
-      <p>Todos os integrantes precisam de conta no BolsaLab. Ela é gratuita e já serve para treinar no simulador.</p>
+      <p class="nota">Todos os integrantes precisam de conta. É gratuita.</p>
     </div>
   </main>
 
@@ -110,7 +122,7 @@ a:focus-visible { outline: 3px solid var(--verde); outline-offset: 3px; border-r
   var d = document.getElementById('dias'), h = document.getElementById('horas'), m = document.getElementById('minutos'), r = document.getElementById('rotulo');
   function passo() {
     var agora = Date.now(), alvo = agora < abre ? abre : fecha;
-    if (agora >= abre) r.textContent = agora < fecha ? 'PARA AS INSCRIÇÕES TERMINAREM EM 19 DE MARÇO' : 'INSCRIÇÕES ENCERRADAS';
+    if (agora >= abre) r.textContent = agora < fecha ? 'PARA AS INSCRIÇÕES TERMINAREM EM 19/3' : 'INSCRIÇÕES ENCERRADAS';
     var resta = Math.max(0, alvo - agora);
     d.textContent = Math.floor(resta / 864e5);
     h.textContent = Math.floor(resta % 864e5 / 36e5);
