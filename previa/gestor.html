@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Organização · Desafio Carteira Recomendada 2027</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="estilo.css">
+<style>
+main.gestor { max-width: 1240px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+@media (max-width: 899px) { main.gestor { grid-template-columns: 1fr; } }
+.numeros { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.numero { background: var(--cartao); border: 1px solid var(--linha); border-radius: 14px; padding: 12px 14px; }
+.numero strong { display: block; font-size: 26px; color: var(--marinho); line-height: 1.1; }
+.numero span { font-size: 13px; color: var(--suave); }
+.numero.alerta strong { color: var(--ambar-texto); }
+@media (max-width: 600px) { .numeros { grid-template-columns: 1fr 1fr; } }
+.filtros { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.filtros input { flex: 1 1 260px; min-height: 44px; }
+.filtros select { flex: 0 0 auto; width: auto; min-height: 44px; }
+.equipe { display: grid; gap: 12px; }
+.equipe-cabeca { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: start; }
+.equipe-cabeca h2 { font-size: 18px; }
+.equipe-acoes { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.equipe-acoes .botao { min-height: 40px; padding: 0 14px; font-size: 14px; }
+.tabela { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tabela th { text-align: left; font-size: 12px; color: var(--suave); font-weight: 700; padding: 6px 8px; border-bottom: 1px solid var(--linha); }
+.tabela td { padding: 8px; border-bottom: 1px solid var(--linha); vertical-align: middle; }
+.tabela tr:last-child td { border-bottom: 0; }
+.tabela .nome { font-weight: 700; color: var(--marinho); }
+.tabela .acoes-comp { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.tabela .acoes-comp .botao { min-height: 32px; padding: 0 10px; font-size: 13px; }
+.rolagem { overflow-x: auto; }
+.faltam { font-size: 13px; color: var(--ambar-texto); }
+.recusa { display: flex; gap: 8px; flex-wrap: wrap; }
+.recusa input { flex: 1 1 220px; min-height: 40px; }
+.lista-simples { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
+.lista-simples li { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.lateral { display: grid; gap: 16px; }
+.inativa { color: var(--suave); text-decoration: line-through; }
+</style>
+</head>
+<body>
+<header class="topo">
+  <div class="topo-dentro">
+    <div class="topo-linha">
+      <a href="https://bolsalab.app/"><img src="../logo.svg" alt="BolsaLab" width="122" height="26"></a>
+      <span id="topo-direita"></span>
+    </div>
+    <div class="topo-titulo"><h1>Desafio Carteira <em>Recomendada</em> 2027</h1>
+    <p>Área da organização</p></div>
+  </div>
+</header>
+<main id="tela" aria-live="polite"><p class="carregando">Carregando…</p></main>
+
+<script src="supabase-2.118.0.js"></script>
+<script>
+// Área do professor: conferir comprovantes, aprovar ou recusar equipes, instituições e testadores.
+// Tudo passa pelas funções do banco que exigem o gestor (_exigir_gestor); a página só mostra.
+const sb = supabase.createClient('https://pvkhqfomfmhtdmvbzohq.supabase.co', 'sb_publishable_BfV3fJAiDJQMpwXkD8vZRw_EBL-Z95n');
+const tela = document.getElementById('tela');
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const msgErro = (e) => (e?.message || 'Algo deu errado.').replace(/^.*?ERROR:\s*/, '');
+async function rpc(nome, args) { const { data, error } = await sb.rpc(nome, args); if (error) throw error; return data; }
+
+let estado = { equipes: [], ies: [], testadores: [], situacao: null, filtro: 'conferir', busca: '', recado: '', recadoOk: false, recusando: null };
+
+const SITUACAO = { formando: ['Em formação', 'selo-espera'], aprovada: ['Aprovada', 'selo-ok'], recusada: ['Recusada', 'selo-nao'] };
+const COMPROVANTE = { pendente: ['Sem comprovante', 'selo-espera'], enviado: ['Para conferir', 'selo-espera'], aprovado: ['Aprovado', 'selo-ok'], recusado: ['Recusado', 'selo-nao'] };
+
+async function carregar() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return desenharEntrada();
+  document.getElementById('topo-direita').innerHTML = '<button class="sair" id="sair">Sair</button>';
+  document.getElementById('sair').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+  try {
+    const situacao = await rpc('desafio_situacao');
+    if (!situacao?.gestor) {
+      tela.className = 'estreito';
+      tela.innerHTML = '<section class="cartao"><h2>Área só da organização</h2><p>Esta conta não é a do gestor. <a href="./">Voltar para a inscrição</a>.</p></section>';
+      return;
+    }
+    const [equipes, ies, testadores] = await Promise.all([
+      rpc('desafio_gestor_equipes'),
+      sb.from('desafio_ies').select('id, nome, sigla, ativa').order('nome').then((r) => r.data ?? []),
+      rpc('desafio_gestor_testadores'),
+    ]);
+    Object.assign(estado, { situacao, equipes: equipes ?? [], ies, testadores: testadores ?? [] });
+  } catch (e) { estado.recado = msgErro(e); }
+  desenhar();
+}
+
+function desenharEntrada() {
+  tela.className = 'estreito';
+  tela.innerHTML = `<form class="cartao" id="entrar">
+    <h2>Área da organização</h2>
+    <p class="suave">Entre com a conta de gestor do BolsaLab.</p>
+    <label>E-mail <input type="email" name="email" autocomplete="email" required></label>
+    <label>Senha <input type="password" name="senha" autocomplete="current-password" required></label>
+    <p id="erro" class="erro" hidden></p>
+    <button class="botao botao-principal">Entrar</button>
+  </form>`;
+  document.getElementById('entrar').onsubmit = async (ev) => {
+    ev.preventDefault();
+    const f = new FormData(ev.target);
+    const { error } = await sb.auth.signInWithPassword({ email: String(f.get('email')).trim(), password: String(f.get('senha')) });
+    if (error) { const p = document.getElementById('erro'); p.textContent = 'E-mail ou senha incorretos.'; p.hidden = false; return; }
+    carregar();
+  };
+}
+
+// ---------------------------------------------------------------- situação de cada equipe
+function analisar(e) {
+  const m = e.integrantes ?? [];
+  const faltas = [];
+  if (m.length < 3) faltas.push(`faltam ${3 - m.length} integrante(s)`);
+  const semComp = m.filter((x) => x.comprovante_situacao === 'pendente').length;
+  if (semComp) faltas.push(`${semComp} sem comprovante`);
+  const conferir = m.filter((x) => x.comprovante_situacao === 'enviado').length;
+  if (conferir) faltas.push(`${conferir} comprovante(s) para conferir`);
+  const recusados = m.filter((x) => x.comprovante_situacao === 'recusado').length;
+  if (recusados) faltas.push(`${recusados} comprovante(s) recusado(s)`);
+  const semCpf = m.filter((x) => !x.cpf).length;
+  if (semCpf) faltas.push(`${semCpf} sem CPF`);
+  return { faltas, conferir, pronta: e.situacao === 'formando' && faltas.length === 0 };
+}
+
+function filtradas() {
+  const b = estado.busca.trim().toLowerCase(), bNum = b.replace(/\D/g, '');
+  return estado.equipes.filter((e) => {
+    const a = analisar(e);
+    if (estado.filtro === 'conferir' && !(a.conferir || a.pronta)) return false;
+    if (['formando', 'aprovada', 'recusada'].includes(estado.filtro) && e.situacao !== estado.filtro) return false;
+    if (!b) return true;
+    const texto = [e.nome, e.ies, e.codigo, ...(e.integrantes ?? []).flatMap((m) => [m.nome, m.email, m.curso])].join(' ').toLowerCase();
+    return texto.includes(b) || (bNum.length >= 3 && (e.integrantes ?? []).some((m) => (m.cpf ?? '').replace(/\D/g, '').includes(bNum)));
+  });
+}
+
+// ---------------------------------------------------------------- desenho
+function desenhar() {
+  const s = estado;
+  tela.className = 'gestor';
+  const todos = s.equipes.flatMap((e) => e.integrantes ?? []);
+  const conferir = todos.filter((m) => m.comprovante_situacao === 'enviado').length;
+  const prontas = s.equipes.filter((e) => analisar(e).pronta).length;
+  const lista = filtradas();
+  const recado = s.recado ? `<p class="${s.recadoOk ? 'ok' : 'erro'}" role="alert" style="grid-column:1/-1">${esc(s.recado)}</p>` : '';
+  s.recado = ''; s.recadoOk = false;
+
+  tela.innerHTML = recado + `<div style="display:grid;gap:16px;min-width:0">
+    <div class="numeros">
+      <div class="numero"><strong>${s.equipes.length}</strong><span>equipes</span></div>
+      <div class="numero"><strong>${s.equipes.filter((e) => e.situacao === 'aprovada').length}</strong><span>aprovadas</span></div>
+      <div class="numero"><strong>${todos.length}</strong><span>alunos inscritos</span></div>
+      <div class="numero ${conferir + prontas ? 'alerta' : ''}"><strong>${conferir + prontas}</strong><span>esperando você</span></div>
+    </div>
+    <div class="filtros">
+      <input type="search" id="busca" placeholder="Buscar equipe, aluno, e-mail, CPF ou instituição" value="${esc(s.busca)}">
+      <select id="filtro" aria-label="Mostrar">
+        ${[['conferir', 'Esperando você'], ['todas', 'Todas'], ['formando', 'Em formação'], ['aprovada', 'Aprovadas'], ['recusada', 'Recusadas']]
+          .map(([v, t]) => `<option value="${v}" ${s.filtro === v ? 'selected' : ''}>${t}</option>`).join('')}
+      </select>
+    </div>
+    ${lista.length ? lista.map(htmlEquipe).join('') : `<section class="cartao"><p class="suave">${s.filtro === 'conferir' ? 'Nada esperando você agora.' : 'Nenhuma equipe encontrada.'}</p></section>`}
+  </div>
+  <aside class="lateral">${htmlSituacao()}${htmlIes()}${htmlTestadores()}</aside>`;
+  ligar();
+}
+
+function htmlEquipe(e) {
+  const [sit, sc] = SITUACAO[e.situacao] ?? [e.situacao, 'selo-espera'];
+  const a = analisar(e);
+  const membros = [...(e.integrantes ?? [])].sort((x, y) => y.lider - x.lider);
+  return `<section class="cartao equipe">
+    <div class="equipe-cabeca">
+      <div><h2>${esc(e.nome)} <span class="selo ${sc}">${sit}</span></h2>
+        <p class="suave">${esc(e.ies)} · ${membros.length} de 5 · criada em ${new Date(e.criada_em).toLocaleDateString('pt-BR')} · código ${esc(e.codigo)}</p>
+        ${e.situacao === 'recusada' && e.motivo ? `<p class="faltam">Motivo: ${esc(e.motivo)}</p>` : ''}
+        ${e.situacao === 'formando' && a.faltas.length ? `<p class="faltam">Falta: ${a.faltas.join(' · ')}</p>` : ''}
+      </div>
+      <div class="equipe-acoes">
+        ${e.situacao !== 'aprovada' ? `<button class="botao botao-principal" data-aprovar="${e.id}" ${a.pronta ? '' : 'disabled title="A equipe ainda não cumpre todos os requisitos"'}>Aprovar equipe</button>` : ''}
+        ${e.situacao !== 'recusada' ? `<button class="botao botao-perigo" data-recusar-equipe="${e.id}">Recusar</button>` : ''}
+        ${e.situacao !== 'formando' ? `<button class="botao" data-reabrir="${e.id}">Voltar para formação</button>` : ''}
+      </div>
+    </div>
+    ${estado.recusando === e.id ? `<form class="recusa" data-form-recusa="${e.id}">
+      <input name="motivo" required minlength="5" placeholder="Motivo da recusa (a equipe vê)" autofocus>
+      <button class="botao botao-perigo">Confirmar recusa</button>
+      <button class="botao" type="button" data-cancelar-recusa>Cancelar</button>
+    </form>` : ''}
+    <div class="rolagem"><table class="tabela">
+      <thead><tr><th>Aluno</th><th>CPF</th><th>Curso</th><th>Comprovante</th><th></th></tr></thead>
+      <tbody>${membros.map((m) => {
+        const [ct, cc] = COMPROVANTE[m.comprovante_situacao] ?? [m.comprovante_situacao, 'selo-espera'];
+        return `<tr>
+          <td><div class="nome">${esc(m.nome || 'Sem nome')}${m.lider ? ' <span class="selo-lider">Líder</span>' : ''}</div><div class="suave">${esc(m.email)}</div></td>
+          <td style="white-space:nowrap">${m.cpf ? esc(m.cpf) : '<span class="faltam">falta</span>'}</td>
+          <td>${esc(m.curso)}<div class="suave">${esc(m.periodo)} período</div></td>
+          <td><span class="selo ${cc}">${ct}</span></td>
+          <td><div class="acoes-comp">
+            ${m.comprovante ? `<button class="botao" data-ver="${esc(m.comprovante)}">Ver</button>` : ''}
+            ${m.comprovante && m.comprovante_situacao !== 'aprovado' ? `<button class="botao" data-comp="${m.user_id}" data-sit="aprovado">Aprovar</button>` : ''}
+            ${m.comprovante && m.comprovante_situacao !== 'recusado' ? `<button class="botao botao-perigo" data-comp="${m.user_id}" data-sit="recusado">Recusar</button>` : ''}
+          </div></td>
+        </tr>`; }).join('')}</tbody>
+    </table></div>
+  </section>`;
+}
+
+function htmlSituacao() {
+  const s = estado.situacao;
+  const fim = new Date(s.inscricoes_fim).toLocaleDateString('pt-BR'), ini = new Date(s.inscricoes_inicio).toLocaleDateString('pt-BR');
+  return `<section class="cartao">
+    <h2>Situação</h2>
+    <p>${s.liberado ? '<span class="selo selo-ok">Desafio liberado</span>' : '<span class="selo selo-espera">Fechado: só testadores</span>'}</p>
+    <p class="suave">Inscrições de ${ini} a ${fim}${s.inscricoes_abertas ? ' (abertas agora)' : ''}.</p>
+    <p class="suave">Para liberar para todos, rode no SQL Editor: <code>select desafio_gestor_liberar(true);</code></p>
+  </section>`;
+}
+function htmlIes() {
+  return `<section class="cartao">
+    <h2>Instituições</h2>
+    <ul class="lista-simples">${estado.ies.map((i) => `<li><span class="${i.ativa ? '' : 'inativa'}">${esc(i.nome)}${i.sigla ? ` (${esc(i.sigla)})` : ''}</span>
+      <button class="botao-link ${i.ativa ? 'botao-perigo' : ''}" data-ies="${i.id}" data-ativa="${!i.ativa}">${i.ativa ? 'Desativar' : 'Ativar'}</button></li>`).join('') || '<li class="suave">Nenhuma cadastrada.</li>'}</ul>
+    <form id="nova-ies" style="display:grid;gap:8px">
+      <input name="nome" required placeholder="Nome da instituição">
+      <div style="display:flex;gap:8px"><input name="sigla" placeholder="Sigla" style="flex:1"><button class="botao">Adicionar</button></div>
+    </form>
+  </section>`;
+}
+function htmlTestadores() {
+  return `<section class="cartao">
+    <h2>Testadores</h2>
+    <p class="suave">Com o desafio fechado, só estes e-mails conseguem se inscrever.</p>
+    <ul class="lista-simples">${estado.testadores.map((t) => `<li><span>${esc(t.email)}${t.tem_conta ? '' : ' <span class="faltam">(sem conta)</span>'}</span>
+      <button class="botao-link botao-perigo" data-tirar="${esc(t.email)}">Tirar</button></li>`).join('') || '<li class="suave">Nenhum.</li>'}</ul>
+    <form id="novo-testador" style="display:flex;gap:8px"><input name="email" type="email" required placeholder="e-mail" style="flex:1"><button class="botao">Incluir</button></form>
+  </section>`;
+}
+
+// ---------------------------------------------------------------- ações
+async function acao(fazer, sucesso) {
+  tela.querySelectorAll('button').forEach((b) => (b.disabled = true));
+  try { await fazer(); estado.recado = sucesso; estado.recadoOk = true; }
+  catch (e) { estado.recado = msgErro(e); }
+  await carregar();
+}
+function ligar() {
+  const busca = document.getElementById('busca');
+  busca.oninput = () => { estado.busca = busca.value; const pos = busca.selectionStart; desenhar(); const n = document.getElementById('busca'); n.focus(); n.setSelectionRange(pos, pos); };
+  document.getElementById('filtro').onchange = (ev) => { estado.filtro = ev.target.value; desenhar(); };
+  tela.querySelectorAll('[data-ver]').forEach((b) => b.onclick = async () => {
+    const janela = window.open('', '_blank');
+    const { data, error } = await sb.storage.from('desafio-comprovantes').createSignedUrl(b.dataset.ver, 300);
+    if (error) { janela?.close(); estado.recado = 'Não consegui abrir o comprovante: ' + msgErro(error); return desenhar(); }
+    if (janela) janela.location = data.signedUrl; else location.href = data.signedUrl;
+  });
+  tela.querySelectorAll('[data-comp]').forEach((b) => b.onclick = () =>
+    acao(() => rpc('desafio_gestor_comprovante', { p_user_id: b.dataset.comp, p_situacao: b.dataset.sit }), b.dataset.sit === 'aprovado' ? 'Comprovante aprovado.' : 'Comprovante recusado. O aluno pode enviar outro.'));
+  tela.querySelectorAll('[data-aprovar]').forEach((b) => b.onclick = () =>
+    acao(() => rpc('desafio_gestor_situacao_equipe', { p_equipe_id: Number(b.dataset.aprovar), p_situacao: 'aprovada' }), 'Equipe aprovada.'));
+  tela.querySelectorAll('[data-reabrir]').forEach((b) => b.onclick = () =>
+    acao(() => rpc('desafio_gestor_situacao_equipe', { p_equipe_id: Number(b.dataset.reabrir), p_situacao: 'formando' }), 'Equipe voltou para formação.'));
+  tela.querySelectorAll('[data-recusar-equipe]').forEach((b) => b.onclick = () => { estado.recusando = Number(b.dataset.recusarEquipe); desenhar(); });
+  tela.querySelector('[data-cancelar-recusa]')?.addEventListener('click', () => { estado.recusando = null; desenhar(); });
+  tela.querySelectorAll('[data-form-recusa]').forEach((f) => f.onsubmit = (ev) => {
+    ev.preventDefault();
+    const id = Number(f.dataset.formRecusa), motivo = new FormData(f).get('motivo');
+    estado.recusando = null;
+    acao(() => rpc('desafio_gestor_situacao_equipe', { p_equipe_id: id, p_situacao: 'recusada', p_motivo: motivo }), 'Equipe recusada.');
+  });
+  tela.querySelectorAll('[data-ies]').forEach((b) => b.onclick = () =>
+    acao(() => rpc('desafio_gestor_ies_ativa', { p_id: Number(b.dataset.ies), p_ativa: b.dataset.ativa === 'true' }), 'Instituição atualizada.'));
+  document.getElementById('nova-ies').onsubmit = (ev) => {
+    ev.preventDefault(); const f = new FormData(ev.target);
+    acao(() => rpc('desafio_gestor_ies', { p_nome: f.get('nome'), p_sigla: f.get('sigla') }), 'Instituição adicionada.');
+  };
+  tela.querySelectorAll('[data-tirar]').forEach((b) => b.onclick = () =>
+    acao(() => rpc('desafio_gestor_testador', { p_email: b.dataset.tirar, p_incluir: false }), 'Testador retirado.'));
+  document.getElementById('novo-testador').onsubmit = (ev) => {
+    ev.preventDefault(); const f = new FormData(ev.target);
+    acao(() => rpc('desafio_gestor_testador', { p_email: f.get('email'), p_incluir: true }), 'Testador incluído.');
+  };
+}
+
+carregar();
+</script>
+</body>
+</html>
