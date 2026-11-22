@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Inscrição · Desafio Carteira Recomendada 2027</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="estilo.css?v=202611220343">
+<link rel="stylesheet" href="estilo.css?v=202611220356">
 </head>
 <body>
 <header class="topo">
@@ -22,7 +22,8 @@
 <main id="tela" aria-live="polite"><p class="carregando">Carregando…</p></main>
 
 <script src="supabase-2.118.0.js"></script>
-<script src="olho.js?v=202611220343"></script>
+<script src="carteira.js?v=202611220356"></script>
+<script src="olho.js?v=202611220356"></script>
 <script>
 // Área de inscrição do desafio (versão de teste: só testadores conseguem agir enquanto o desafio estiver fechado).
 // As regras de verdade estão no banco (migrações 053 e 054); esta página só chama as funções.
@@ -70,9 +71,13 @@ function colunas(n) { tela.className = n > 1 ? `colunas-${n}` : ''; }
 function desenhar() {
   const s = estado;
   colunas(1);
+  const abas = s.equipe ? `<nav class="abas-topo" aria-label="Seções">
+      <button data-aba-topo="equipe" aria-current="${s.abaTopo !== 'carteira' ? 'page' : 'false'}">Equipe</button>
+      <button data-aba-topo="carteira" aria-current="${s.abaTopo === 'carteira' ? 'page' : 'false'}">Carteira</button></nav>` : '';
   topoDireita.innerHTML = s.sessao
-    ? `${s.situacao?.testador && !s.situacao?.liberado ? '<span class="faixa-teste">MODO TESTE</span> ' : ''}<button class="sair" id="sair">Sair</button>`
+    ? `${abas}${s.situacao?.testador && !s.situacao?.liberado ? '<span class="faixa-teste">MODO TESTE</span> ' : ''}<button class="sair" id="sair">Sair</button>`
     : '';
+  topoDireita.querySelectorAll('[data-aba-topo]').forEach((b) => b.addEventListener('click', () => { s.abaTopo = b.dataset.abaTopo; desenhar(); }));
   document.getElementById('sair')?.addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
 
   if (!s.sessao) return desenharEntrada();
@@ -80,6 +85,13 @@ function desenhar() {
   s.recado = ''; s.recadoOk = false;
 
   const podeAgir = s.situacao && (s.situacao.testador || s.situacao.inscricoes_abertas);
+  if (s.equipe && s.abaTopo === 'carteira') {
+    if (!cart.pronto) { tela.innerHTML = '<p class="carregando">Carregando a carteira…</p>'; abrirCarteira().then(desenhar).catch((e) => { s.recado = msgErro(e); s.abaTopo = 'equipe'; desenhar(); }); return; }
+    tela.className = 'carteira-grade';
+    tela.innerHTML = recado + htmlCarteira();
+    ligarCarteira();
+    return;
+  }
   if (s.equipe) { colunas(3); tela.innerHTML = recado + htmlEquipe(!!podeAgir); ligarEquipe(); ligarCpf(); return; }
   if (!podeAgir) {
     const inicio = s.situacao ? new Date(s.situacao.inscricoes_inicio).toLocaleDateString('pt-BR') : '01/02/2027';

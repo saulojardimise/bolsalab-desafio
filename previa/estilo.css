@@ -134,3 +134,47 @@ dialog.pergunta p { margin: 0 0 10px; }
 .campo-senha input { padding-right: 50px; }
 .campo-senha-olho { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; display: grid; place-items: center; border: 0; background: transparent; color: var(--suave); border-radius: 10px; cursor: pointer; }
 .campo-senha-olho:hover, .campo-senha-olho[aria-pressed="true"] { color: var(--verde); }
+/* abas no topo (Equipe | Carteira) */
+#topo-direita { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.abas-topo { display: inline-flex; background: rgba(255,255,255,.1); border-radius: 12px; padding: 3px; gap: 2px; margin-right: 6px; }
+.abas-topo button { font: inherit; font-weight: 700; font-size: 14px; border: 0; background: none; color: #B9C7DD; padding: 6px 14px; border-radius: 9px; cursor: pointer; }
+.abas-topo button[aria-current="page"] { background: #3DDCAA; color: #062344; }
+/* editor da carteira */
+main.carteira-grade { display: grid; gap: 16px; align-items: start; }
+@media (min-width: 900px) { main.carteira-grade { grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, .85fr); } }
+main.carteira-grade > .erro, main.carteira-grade > .ok { grid-column: 1 / -1; }
+.carteira-cabeca select { justify-self: start; width: auto; min-height: 40px; font-weight: 800; color: var(--marinho); }
+.carteira-cabeca strong { font-size: 17px; color: var(--marinho); }
+.posicoes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.posicoes li { display: grid; grid-template-columns: 1fr 64px 14px; gap: 6px; align-items: center; border: 1.5px solid var(--linha); border-radius: 12px; padding: 4px 8px 4px 4px; }
+.posicoes li.ativa { border-color: var(--verde); background: var(--verde-fundo); }
+.posicao-abrir { font: inherit; text-align: left; background: none; border: 0; padding: 6px 8px; border-radius: 9px; cursor: pointer; color: var(--texto); display: flex; flex-wrap: wrap; gap: 0 8px; align-items: baseline; }
+.posicao-abrir strong { color: var(--marinho); }
+.posicao-abrir .suave { font-size: 12px; }
+.tese-estado { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--ambar-texto); }
+.tese-estado.certo { color: var(--verde-texto); }
+.peso { min-height: 38px !important; padding: 6px 8px !important; text-align: right; font-weight: 800; font-size: 16px; }
+.pct { font-weight: 700; color: var(--suave); }
+.busca-ativo input { min-height: 42px; border-style: dashed; }
+.cenario-abrir { border: 1.5px dashed var(--linha); width: 100%; padding: 10px 12px; }
+.cenario-abrir.ativa { border-style: solid; border-color: var(--verde); background: var(--verde-fundo); }
+.lados { display: inline-grid; grid-template-columns: 1fr 1fr; background: var(--linha); border-radius: 12px; padding: 4px; gap: 4px; justify-self: start; }
+.lados button { font: inherit; font-weight: 700; border: 0; border-radius: 9px; padding: 8px 18px; background: none; color: var(--suave); cursor: pointer; }
+.lados button[aria-checked="true"] { background: var(--cartao); color: var(--marinho); box-shadow: var(--sombra); }
+.lados button[aria-checked="true"][data-lado="vendido"] { color: var(--vermelho); }
+.lados button:disabled { opacity: .4; cursor: default; }
+textarea { font: inherit; font-weight: 500; color: var(--texto); background: var(--campo); border: 1.5px solid var(--linha); border-radius: 12px; padding: 12px 14px; width: 100%; resize: vertical; line-height: 1.5; }
+textarea:focus { outline: 3px solid color-mix(in srgb, var(--verde) 35%, transparent); border-color: var(--verde); }
+.contador { font-size: 13px; font-weight: 700; color: var(--ambar-texto); margin: -4px 0 0; }
+.contador.certo { color: var(--verde-texto); }
+.barra-total { height: 10px; background: var(--linha); border-radius: 999px; overflow: hidden; }
+.barra-total span { display: block; height: 100%; background: var(--verde); transition: width .2s; }
+.barra-total span.passou { background: var(--vermelho); }
+.checagem { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 14px; color: var(--ambar-texto); }
+.checagem li.certo { color: var(--verde-texto); }
+.leitura { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.leitura-topo { display: flex; gap: 8px; align-items: baseline; }
+.leitura-topo b { margin-left: auto; color: var(--marinho); }
+.texto-longo { white-space: pre-wrap; font-size: 14px; color: var(--texto); margin: 4px 0 0; }
+@media (min-width: 900px) { .carteira-texto textarea { min-height: 230px; } .posicoes li { padding-top: 2px; padding-bottom: 2px; } .checagem { gap: 2px; font-size: 13px; } }
+@media (min-width: 900px) { .rolavel { max-height: calc(100vh - 250px); overflow: auto; } }
