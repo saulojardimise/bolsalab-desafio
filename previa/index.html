@@ -102,6 +102,12 @@ input:focus, select:focus { outline: 3px solid color-mix(in srgb, var(--verde) 3
   .acoes-membro { display: inline-flex; margin: 0 0 0 10px; gap: 10px; }
 }
 .como { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+dialog.pergunta { border: 0; border-radius: 18px; padding: 24px; width: min(440px, calc(100vw - 32px)); background: var(--cartao); color: var(--texto); box-shadow: 0 20px 60px rgb(0 0 0 / .3); }
+dialog.pergunta::backdrop { background: rgb(6 35 68 / .55); }
+dialog.pergunta h2 { margin: 0 0 10px; font-size: 20px; color: var(--marinho); }
+dialog.pergunta p { margin: 0 0 10px; }
+.pergunta-botoes { display: grid; gap: 10px; margin-top: 16px; }
+.pergunta-botoes .botao-link { justify-self: center; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -218,8 +224,8 @@ function opcoesIes() {
 }
 function camposAluno() {
   return `<div class="dupla">
-    <label>Seu curso <input name="curso" maxlength="80" required value="${esc(estado.perfil?.curso ?? '')}" placeholder="Ex.: Economia"></label>
-    <label>Período <input name="periodo" maxlength="20" required placeholder="Ex.: 5º"></label>
+    <label>Seu curso <input name="curso" maxlength="80" required value="${esc(estado.rascunho?.curso ?? estado.perfil?.curso ?? '')}" placeholder="Ex.: Economia"></label>
+    <label>Período <input name="periodo" maxlength="20" required value="${esc(estado.rascunho?.periodo ?? '')}" placeholder="Ex.: 5º"></label>
   </div>`;
 }
 function htmlComoFunciona() {
@@ -260,7 +266,17 @@ function htmlSemEquipe() {
 }
 function ligarSemEquipe() {
   tela.querySelectorAll('[data-aba]').forEach((b) => b.addEventListener('click', () => { estado.aba = b.dataset.aba; desenhar(); }));
-  enviar('form-criar', (f) => rpc('desafio_criar_equipe', { p_nome: f.get('nome'), p_ies_id: Number(f.get('ies')) || null, p_curso: f.get('curso'), p_periodo: f.get('periodo') }), 'Equipe criada! Agora convide os colegas com o código.');
+  enviar('form-criar', (f) => rpc('desafio_criar_equipe', { p_nome: f.get('nome'), p_ies_id: Number(f.get('ies')) || null, p_curso: f.get('curso'), p_periodo: f.get('periodo') }), 'Equipe criada! Agora convide os colegas com o código.',
+    async (f) => {
+      // evita equipes duplicadas: quem recebeu o código do líder deve entrar, não criar outra
+      const escolha = await perguntar(f.get('nome'));
+      if (escolha === 'codigo') {
+        estado.rascunho = { curso: f.get('curso'), periodo: f.get('periodo') };
+        estado.aba = 'entrar'; desenhar();
+        document.querySelector('#form-entrar-equipe input[name=codigo]')?.focus();
+      }
+      return escolha === 'criar';
+    });
   enviar('form-entrar-equipe', (f) => rpc('desafio_entrar_equipe', { p_codigo: f.get('codigo'), p_curso: f.get('curso'), p_periodo: f.get('periodo') }), 'Você entrou na equipe!');
 }
 
@@ -379,11 +395,34 @@ async function acao(fazer, sucesso) {
   await carregar();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-function enviar(id, chamar, sucesso) {
-  document.getElementById(id)?.addEventListener('submit', (ev) => {
+function enviar(id, chamar, sucesso, antes) {
+  document.getElementById(id)?.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     const f = new FormData(ev.target);
+    if (antes && !(await antes(f))) return;
     acao(() => chamar(f), sucesso);
+  });
+}
+
+// pergunta antes de criar: criar mesmo, ou entrar com o código do líder? -> 'criar' | 'codigo' | null
+function perguntar(nome) {
+  return new Promise((resolver) => {
+    const d = document.createElement('dialog');
+    d.className = 'pergunta';
+    d.setAttribute('aria-labelledby', 'pergunta-titulo');
+    d.innerHTML = `<h2 id="pergunta-titulo">Criar uma equipe nova?</h2>
+      <p>Você vai criar a equipe <strong>${esc(nome)}</strong> e será o <strong>líder</strong>.</p>
+      <p class="suave">Se um colega já criou a equipe de vocês, não crie outra: peça o código para o líder e entre com ele.</p>
+      <div class="pergunta-botoes">
+        <button class="botao botao-principal" value="criar">Sim, criar a equipe</button>
+        <button class="botao" value="codigo">Tenho o código do líder</button>
+        <button class="botao-link" value="">Cancelar</button>
+      </div>`;
+    document.body.append(d);
+    d.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => d.close(b.value)));
+    d.addEventListener('close', () => { resolver(d.returnValue || null); d.remove(); });
+    d.addEventListener('click', (e) => { if (e.target === d) d.close(''); });
+    d.showModal();
   });
 }
 
