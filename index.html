@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Desafio Carteira Recomendada 2027 · BolsaLab</title>
+<meta name="description" content="Equipes de universitários de Campos dos Goytacazes montam e defendem uma carteira recomendada com preços reais da B3. Inscrições de 1/2 a 19/3/2027.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://desafio.bolsalab.app/">
+<meta property="og:title" content="Desafio Carteira Recomendada 2027">
+<meta property="og:description" content="Universitários de Campos dos Goytacazes montam e defendem uma carteira recomendada com preços reais da B3. Inscrições de 1/2 a 19/3/2027.">
+<meta property="og:image" content="https://desafio.bolsalab.app/compartilhar.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#062344">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+@font-face { font-family: 'Jakarta'; src: url(fontes/plus-jakarta-sans-latin-wght-normal.woff2) format('woff2'); font-weight: 200 800; font-display: swap; }
+@font-face { font-family: 'Jakarta'; src: url(fontes/plus-jakarta-sans-latin-ext-wght-normal.woff2) format('woff2'); font-weight: 200 800; font-display: swap; unicode-range: U+0100-024F; }
+:root { --marinho: #062344; --verde: #3DDCAA; --texto: #E8EEF8; --suave: #B9C7DD; --apagado: #8FA3C0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { min-height: 100vh; background: var(--marinho); color: #fff; font-family: 'Jakarta', system-ui, sans-serif; overflow-x: hidden; }
+.fundo { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.fundo::before, .fundo::after { content: ''; position: absolute; border-radius: 50%; filter: blur(90px); }
+.fundo::before { width: 620px; height: 620px; right: -180px; top: -200px; background: #0F6B52; opacity: .55; }
+.fundo::after { width: 560px; height: 560px; left: -240px; bottom: -220px; background: #1B4C96; opacity: .5; }
+.grade { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .05; background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 56px 56px; }
+.pagina { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 28px 24px 40px; min-height: 100vh; display: flex; flex-direction: column; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+header img { height: 30px; width: auto; display: block; }
+header a.app { color: var(--suave); font-weight: 600; font-size: 15px; text-decoration: none; }
+header a.app:hover { color: #fff; }
+main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 56px 0 40px; }
+.selo { display: inline-block; align-self: flex-start; font-size: 13px; font-weight: 800; letter-spacing: 2px; color: var(--marinho); background: var(--verde); padding: 7px 14px; border-radius: 999px; }
+h1 { margin: 22px 0 0; font-size: clamp(42px, 8vw, 84px); line-height: 1.02; font-weight: 800; letter-spacing: -0.03em; }
+h1 em { font-style: normal; color: var(--verde); }
+.breve { margin: 18px 0 0; font-size: clamp(22px, 3.4vw, 30px); font-weight: 700; color: var(--texto); }
+.lead { margin: 18px 0 0; max-width: 640px; font-size: clamp(17px, 2.2vw, 20px); line-height: 1.55; color: var(--suave); }
+.contagem { margin-top: 36px; display: flex; gap: 12px; flex-wrap: wrap; }
+.contagem div { min-width: 104px; padding: 16px 18px; border-radius: 16px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); text-align: center; }
+.contagem strong { display: block; font-size: 38px; font-weight: 800; line-height: 1.1; }
+.contagem span { font-size: 13px; color: var(--suave); }
+.contagem-rotulo { margin: 14px 0 0; font-size: 14px; font-weight: 700; letter-spacing: 1px; color: #8ED6BD; }
+.datas { margin-top: 44px; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
+.datas div { padding: 18px 20px; border-radius: 16px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); }
+.datas b { display: block; font-size: 15px; color: var(--verde); }
+.datas p { margin: 6px 0 0; font-size: 16px; line-height: 1.45; color: var(--texto); }
+.acoes { margin-top: 40px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+.botao { display: inline-block; background: var(--verde); color: var(--marinho); font-weight: 800; font-size: 17px; padding: 15px 26px; border-radius: 14px; text-decoration: none; }
+.botao:hover { background: #8ED6BD; }
+.acoes p { margin: 0; font-size: 15px; color: var(--suave); max-width: 420px; }
+footer { font-size: 14px; color: var(--apagado); display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; border-top: 1px solid rgba(255,255,255,.1); padding-top: 20px; }
+a:focus-visible { outline: 3px solid var(--verde); outline-offset: 3px; border-radius: 6px; }
+@media (prefers-reduced-motion: no-preference) {
+  main > * { animation: sobe .7s cubic-bezier(.2,.8,.2,1) both; }
+  main > *:nth-child(2) { animation-delay: .06s; } main > *:nth-child(3) { animation-delay: .12s; }
+  main > *:nth-child(4) { animation-delay: .18s; } main > *:nth-child(5) { animation-delay: .24s; }
+  main > *:nth-child(6) { animation-delay: .3s; } main > *:nth-child(7) { animation-delay: .36s; }
+  @keyframes sobe { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+}
+</style>
+</head>
+<body>
+<div class="fundo" aria-hidden="true"></div>
+<div class="grade" aria-hidden="true"></div>
+<div class="pagina">
+  <header>
+    <a href="https://bolsalab.app/" aria-label="BolsaLab"><img src="logo.svg" alt="BolsaLab" width="141" height="30"></a>
+    <a class="app" href="https://bolsalab.app/">Abrir o app →</a>
+  </header>
+
+  <main>
+    <span class="selo">CAMPOS DOS GOYTACAZES · 2027</span>
+    <h1>Desafio Carteira <em>Recomendada</em> 2027</h1>
+    <p class="breve">Em breve</p>
+    <p class="lead">Equipes de 3 a 5 universitários de Campos dos Goytacazes montam uma carteira recomendada, defendem cada escolha por escrito e disputam com os preços reais da B3. As 8 melhores vão para a final.</p>
+
+    <div>
+      <div class="contagem" role="timer" aria-live="off" aria-label="Tempo até a abertura das inscrições">
+        <div><strong id="dias">–</strong><span>dias</span></div>
+        <div><strong id="horas">–</strong><span>horas</span></div>
+        <div><strong id="minutos">–</strong><span>minutos</span></div>
+      </div>
+      <p class="contagem-rotulo" id="rotulo">PARA AS INSCRIÇÕES ABRIREM EM 1º DE FEVEREIRO</p>
+    </div>
+
+    <div class="datas">
+      <div><b>1/2 a 19/3/2027</b><p>Inscrições das equipes</p></div>
+      <div><b>29/3 a 31/8/2027</b><p>Desafio, com rebalanceamento mensal</p></div>
+      <div><b>17/9/2027</b><p>Final com as 8 melhores equipes</p></div>
+    </div>
+
+    <div class="acoes">
+      <a class="botao" href="https://bolsalab.app/">Criar minha conta no BolsaLab</a>
+      <p>Todos os integrantes precisam de conta no BolsaLab. Ela é gratuita e já serve para treinar no simulador.</p>
+    </div>
+  </main>
+
+  <footer>
+    <span>Organização: Prof. Dr. Saulo Jardim</span>
+    <span>Regulamento completo em breve · Nada aqui é recomendação de investimento.</span>
+  </footer>
+</div>
+<script>
+// contagem até a abertura das inscrições (1/2/2027, 0h em Brasília); depois, até o fim delas (19/3, 23h59)
+(function () {
+  var abre = Date.parse('2027-02-01T00:00:00-03:00'), fecha = Date.parse('2027-03-19T23:59:00-03:00');
+  var d = document.getElementById('dias'), h = document.getElementById('horas'), m = document.getElementById('minutos'), r = document.getElementById('rotulo');
+  function passo() {
+    var agora = Date.now(), alvo = agora < abre ? abre : fecha;
+    if (agora >= abre) r.textContent = agora < fecha ? 'PARA AS INSCRIÇÕES TERMINAREM EM 19 DE MARÇO' : 'INSCRIÇÕES ENCERRADAS';
+    var resta = Math.max(0, alvo - agora);
+    d.textContent = Math.floor(resta / 864e5);
+    h.textContent = Math.floor(resta % 864e5 / 36e5);
+    m.textContent = Math.floor(resta % 36e5 / 6e4);
+  }
+  passo(); setInterval(passo, 30000);
+})();
+</script>
+</body>
+</html>
