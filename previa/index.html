@@ -75,6 +75,33 @@ input:focus, select:focus { outline: 3px solid color-mix(in srgb, var(--verde) 3
 .carregando { text-align: center; color: var(--suave); padding: 40px 0; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 @media (max-width: 480px) { .dupla { grid-template-columns: 1fr; } }
+/* computador: cabeçalho numa linha e cartões lado a lado, tudo cabendo na tela */
+@media (min-width: 900px) {
+  .topo { padding: 14px 24px; }
+  .topo-dentro { max-width: 1240px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 24px; }
+  .topo-linha { display: contents; }
+  .topo-linha > a { order: 1; } #topo-direita { order: 3; }
+    .topo h1 { margin: 0; font-size: 22px; }
+  .topo-titulo p { display: none; }
+  .topo-titulo { order: 2; }
+  main { max-width: 1240px; margin: 20px auto 0; padding: 0 24px 24px; align-items: start; }
+  main.colunas-2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
+  main.colunas-3 { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr) minmax(0, .95fr); }
+  main > .erro, main > .ok { grid-column: 1 / -1; }
+  .pilha { display: grid; gap: 16px; align-content: start; }
+  .cartao { padding: 18px 20px; gap: 12px; }
+  .integrantes li { padding: 8px 0; grid-template-columns: 34px 1fr auto; }
+  .avatar { width: 34px; height: 34px; font-size: 13px; }
+  .passos { gap: 2px; }
+  main { margin-top: 16px; padding-bottom: 16px; gap: 16px; }
+  input, select { min-height: 42px; padding: 8px 12px; }
+  label { gap: 4px; }
+  form.cartao { gap: 10px !important; }
+  main.colunas-3 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, .85fr); }
+  .integrantes .suave { display: inline; }
+  .acoes-membro { display: inline-flex; margin: 0 0 0 10px; gap: 10px; }
+}
+.como { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
 </style>
 </head>
 <body>
@@ -84,8 +111,8 @@ input:focus, select:focus { outline: 3px solid color-mix(in srgb, var(--verde) 3
       <a href="https://bolsalab.app/"><img src="../logo.svg" alt="BolsaLab" width="122" height="26"></a>
       <span id="topo-direita"></span>
     </div>
-    <h1>Desafio Carteira <em>Recomendada</em> 2027</h1>
-    <p>Inscrição das equipes</p>
+    <div class="topo-titulo"><h1>Desafio Carteira <em>Recomendada</em> 2027</h1>
+    <p>Inscrição das equipes</p></div>
   </div>
 </header>
 <main id="tela" aria-live="polite"><p class="carregando">Carregando…</p></main>
@@ -131,8 +158,11 @@ async function carregar() {
   desenhar();
 }
 
+function colunas(n) { tela.className = n > 1 ? `colunas-${n}` : ''; }
+
 function desenhar() {
   const s = estado;
+  colunas(1);
   topoDireita.innerHTML = s.sessao
     ? `${s.situacao?.testador && !s.situacao?.liberado ? '<span class="faixa-teste">MODO TESTE</span> ' : ''}<button class="sair" id="sair">Sair</button>`
     : '';
@@ -143,7 +173,7 @@ function desenhar() {
   s.recado = ''; s.recadoOk = false;
 
   const podeAgir = s.situacao && (s.situacao.testador || s.situacao.inscricoes_abertas);
-  if (s.equipe) { tela.innerHTML = recado + htmlEquipe(); ligarEquipe(); return; }
+  if (s.equipe) { colunas(3); tela.innerHTML = recado + htmlEquipe(); ligarEquipe(); return; }
   if (!podeAgir) {
     const inicio = s.situacao ? new Date(s.situacao.inscricoes_inicio).toLocaleDateString('pt-BR') : '01/02/2027';
     tela.innerHTML = recado + `<section class="cartao"><h2>As inscrições ainda não abriram</h2>
@@ -151,7 +181,8 @@ function desenhar() {
       <p class="suave">Enquanto isso, treine no <a href="${APP}">simulador</a> e chame os colegas da equipe para criarem a conta deles.</p></section>`;
     return;
   }
-  tela.innerHTML = recado + htmlSemEquipe();
+  colunas(2);
+  tela.innerHTML = recado + htmlComoFunciona() + htmlSemEquipe();
   ligarSemEquipe();
 }
 
@@ -191,11 +222,24 @@ function camposAluno() {
     <label>Período <input name="periodo" maxlength="20" required placeholder="Ex.: 5º"></label>
   </div>`;
 }
+function htmlComoFunciona() {
+  return `<section class="cartao">
+    <h2>Como funciona</h2>
+    <ul class="como">
+      <li>Equipes de <strong>3 a 5 alunos da mesma instituição</strong>, cada um com conta no BolsaLab.</li>
+      <li>Quem cria a equipe é o <strong>líder</strong> e envia a carteira todo mês. Os colegas entram com o código.</li>
+      <li>Cada integrante envia o <strong>comprovante de matrícula</strong>; a organização confere e aprova a equipe.</li>
+      <li>A carteira é <strong>mensal</strong>, de abril a agosto: de 3 a 7 ativos, com uma tese para cada um.</li>
+      <li>As <strong>8 equipes</strong> com maior rentabilidade vão para a final, em 17/09/2027.</li>
+    </ul>
+    <p class="suave">Inscrições de 01/02 a 19/03/2027.</p>
+  </section>`;
+}
 function htmlSemEquipe() {
   const criar = estado.aba === 'criar';
   return `<section class="cartao">
     <h2>Olá, ${esc((estado.perfil?.nome || '').split(' ')[0] || 'tudo bem')}!</h2>
-    <p>Equipes de <strong>3 a 5 alunos da mesma instituição</strong>. Uma pessoa cria a equipe e vira líder; os colegas entram com o código.</p>
+    <p class="suave">Crie a sua equipe ou entre na de um colega com o código.</p>
     <div class="abas" role="tablist">
       <button role="tab" aria-selected="${criar}" data-aba="criar">Criar equipe</button>
       <button role="tab" aria-selected="${!criar}" data-aba="entrar">Tenho um código</button>
@@ -225,8 +269,8 @@ const SITUACAO = {
   formando: ['Em formação', 'selo-espera'], aprovada: ['Aprovada', 'selo-ok'], recusada: ['Recusada', 'selo-nao'],
 };
 const COMPROVANTE = {
-  pendente: ['Falta o comprovante', 'selo-espera'], enviado: ['Comprovante em análise', 'selo-espera'],
-  aprovado: ['Comprovante aprovado', 'selo-ok'], recusado: ['Comprovante recusado', 'selo-nao'],
+  pendente: ['Sem comprovante', 'selo-espera'], enviado: ['Em análise', 'selo-espera'],
+  aprovado: ['Aprovado', 'selo-ok'], recusado: ['Recusado', 'selo-nao'],
 };
 function htmlEquipe() {
   const e = estado.equipe, eu = estado.sessao.user.id;
@@ -260,13 +304,14 @@ function htmlEquipe() {
 
   <section class="cartao">
     <h2>Integrantes (${qtd} de 5)</h2>
+    <p class="suave" style="margin-top:-8px">À direita, a situação do comprovante de matrícula de cada um.</p>
     <ul class="integrantes">${membros.map((m) => {
       const [ct, cc] = COMPROVANTE[m.comprovante] ?? [m.comprovante, 'selo-espera'];
       const iniciais = esc((m.nome || '?').split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase());
       return `<li>
         <span class="avatar">${m.foto ? `<img src="${esc(m.foto)}" alt="">` : iniciais}</span>
         <div><div class="nome">${esc(m.nome || 'Sem nome')}${m.lider ? ' · líder' : ''}${m.user_id === eu ? ' (você)' : ''}</div>
-          <div class="suave">${esc(m.curso)} · ${esc(m.periodo)} período</div>
+          <div class="suave">${esc(m.curso)} · ${esc(m.periodo)} per.</div>
           ${e.eu_lider && m.user_id !== eu ? `<div class="acoes-membro">
             <button class="botao-link" data-lider="${m.user_id}">Passar liderança</button>
             <button class="botao-link botao-perigo" data-remover="${m.user_id}">Remover</button></div>` : ''}
@@ -275,7 +320,7 @@ function htmlEquipe() {
       </li>`; }).join('')}</ul>
   </section>
 
-  <section class="cartao">
+  <div class="pilha"><section class="cartao">
     <h2>Seu comprovante de matrícula</h2>
     <p>${meu?.comprovante === 'pendente' ? 'Envie um comprovante de matrícula de 2027 (PDF, JPG ou PNG, até 5 MB).'
         : meu?.comprovante === 'recusado' ? 'Seu comprovante foi recusado. Envie outro, legível e do semestre atual.'
@@ -288,7 +333,7 @@ function htmlEquipe() {
     <h2>Sair da equipe</h2>
     <p class="suave">${e.eu_lider && qtd > 1 ? 'Você é o líder: passe a liderança para outro integrante antes de sair.' : qtd === 1 ? 'Você é o único integrante: ao sair, a equipe deixa de existir.' : 'Você pode sair enquanto as inscrições estiverem abertas.'}</p>
     <button class="botao botao-perigo" id="sair-equipe" type="button" ${e.eu_lider && qtd > 1 ? 'disabled' : ''}>Sair da equipe</button>
-  </section>`;
+  </section></div>`;
 }
 function ligarEquipe() {
   const e = estado.equipe;
