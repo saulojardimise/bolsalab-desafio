@@ -218,7 +218,7 @@ function htmlEquipe(e) {
           <td><button class="aluno-link" data-perfil="${m.user_id}" data-equipe="${e.id}">${esc(m.nome || 'Sem nome')}</button>${m.lider ? ' <span class="selo-lider">Líder</span>' : ''}<div class="suave">${esc(m.email)}</div></td>
           <td style="white-space:nowrap">${m.cpf ? esc(m.cpf) : '<span class="faltam">falta</span>'}</td>
           <td>${m.ies_ok ? `<span class="selo selo-ok">${esc(m.ies_declarada)}</span>` : m.ies_declarada ? `<span class="selo selo-nao">${esc(m.ies_declarada)}</span>` : '<span class="faltam">não declarou</span>'}
-            ${m.universidade_perfil ? `<div class="suave" title="O que o aluno pôs no perfil do BolsaLab">perfil: ${esc(m.universidade_perfil)}</div>` : ''}</td>
+            ${m.universidade_perfil ? `<div class="${bateIes(m.universidade_perfil, e) ? 'suave' : 'faltam'}" title="Universidade que o aluno pôs no perfil do app BolsaLab (não é a declaração do desafio)">no app: ${esc(m.universidade_perfil)}${bateIes(m.universidade_perfil, e) ? '' : ' ⚠ diferente'}</div>` : ''}</td>
           <td>${esc(m.curso)}<div class="suave">${esc(m.periodo)} período</div></td>
           <td><span class="selo ${cc}">${ct}</span></td>
           <td><div class="acoes-comp">
@@ -260,6 +260,13 @@ function htmlTestadores() {
       <button class="botao-link botao-perigo" data-tirar="${esc(t.email)}">Tirar</button></li>`).join('') || '<li class="suave">Nenhum.</li>'}</ul>
     <form id="novo-testador" style="display:flex;gap:8px"><input name="email" type="email" required placeholder="e-mail" style="flex:1"><button class="botao">Incluir</button></form>
   </section>`;
+}
+
+// a universidade do perfil do app parece a mesma da equipe? (texto livre: compara sem acento e maiúsculas)
+const normal = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+function bateIes(perfil, e) {
+  const p = normal(perfil), alvo = [normal(e.ies), normal(e.ies_sigla)].filter(Boolean);
+  return !p || alvo.some((a) => a === p || a.split(' ').includes(p) || a.includes(p) || p.includes(a));
 }
 
 // ---------------------------------------------------------------- perfil do aluno
