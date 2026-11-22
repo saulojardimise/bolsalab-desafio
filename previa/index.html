@@ -107,6 +107,13 @@ input:focus, select:focus { outline: 3px solid color-mix(in srgb, var(--verde) 3
 }
 .como { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
 .busca { position: relative; }
+.convidar-caixa { background: var(--verde-fundo); border: 2px solid var(--verde); border-radius: 14px; padding: 12px; }
+.convidar-titulo { font-size: 16px; font-weight: 800; color: var(--verde-texto); margin-bottom: 8px; }
+.convidar-campo { position: relative; }
+.convidar-campo svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--verde); pointer-events: none; }
+.convidar-campo input { padding-left: 44px; min-height: 50px; font-size: 16px; border: 2px solid var(--verde); background: var(--campo); }
+.convidar-caixa .sugestoes { top: auto; margin-top: 6px; left: 12px; right: 12px; }
+.convidar-caixa #busca-dica { color: var(--verde-texto); }
 .sugestoes { position: absolute; left: 0; right: 0; top: 52px; z-index: 5; list-style: none; margin: 0; padding: 4px; border: 1.5px solid var(--linha); border-radius: 12px; background: var(--cartao); box-shadow: var(--sombra); display: grid; gap: 2px; }
 .sugestoes li { display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: center; padding: 6px 8px; border-radius: 8px; }
 .sugestoes li:hover { background: var(--fundo); }
@@ -381,10 +388,12 @@ function htmlEquipe(gestao) {
       <ol class="passos">${passos.map(([feito, t]) => `<li class="${feito ? 'feito' : ''}">${t}</li>`).join('')}</ol></div>`}
     ${!gestao ? '<p class="suave">As inscrições terminaram: a equipe não pode mais ser alterada.</p>' : ''}
     ${gestao && e.eu_lider && qtd < 5 && e.situacao !== 'recusada' ? `<div>
-      <p style="font-weight:700;color:var(--marinho);margin-bottom:6px">Convide os colegas</p>
-      <div class="busca">
-        <label class="sr" for="busca-colega">Nome ou e-mail do colega</label>
-        <input id="busca-colega" type="search" autocomplete="off" placeholder="Digite o nome ou o e-mail do colega" aria-describedby="busca-dica">
+      <div class="busca convidar-caixa">
+        <label for="busca-colega" class="convidar-titulo">Convide os colegas</label>
+        <div class="convidar-campo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+          <input id="busca-colega" type="search" autocomplete="off" placeholder="Nome ou e-mail do colega" aria-describedby="busca-dica">
+        </div>
         <ul id="sugestoes" class="sugestoes" role="listbox" hidden></ul>
         <p id="busca-dica" class="suave" style="margin-top:4px">O colega recebe o convite no BolsaLab e por e-mail. Ou mande o código da equipe:</p>
       </div>
