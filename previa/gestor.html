@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Organização · Desafio Carteira Recomendada 2027</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="estilo.css?v=202611220321">
+<link rel="stylesheet" href="estilo.css?v=202611220334">
 <style>
 main.gestor { max-width: 1240px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
 @media (max-width: 899px) { main.gestor { grid-template-columns: 1fr; } }
@@ -55,7 +55,7 @@ main.gestor { max-width: 1240px; display: grid; grid-template-columns: minmax(0,
 <main id="tela" aria-live="polite"><p class="carregando">Carregando…</p></main>
 
 <script src="supabase-2.118.0.js"></script>
-<script src="olho.js?v=202611220321"></script>
+<script src="olho.js?v=202611220334"></script>
 <script>
 // Área do professor: conferir comprovantes, aprovar ou recusar equipes, instituições e testadores.
 // Tudo passa pelas funções do banco que exigem o gestor (_exigir_gestor); a página só mostra.
@@ -124,6 +124,8 @@ function analisar(e) {
   if (recusados) faltas.push(`${recusados} comprovante(s) recusado(s)`);
   const semCpf = m.filter((x) => !x.cpf).length;
   if (semCpf) faltas.push(`${semCpf} sem CPF`);
+  const outraIes = m.filter((x) => !x.ies_ok).length;
+  if (outraIes) faltas.push(`${outraIes} com instituição diferente ou não declarada`);
   return { faltas, conferir, pronta: e.situacao === 'formando' && faltas.length === 0 };
 }
 
@@ -193,12 +195,14 @@ function htmlEquipe(e) {
       <button class="botao" type="button" data-cancelar-recusa>Cancelar</button>
     </form>` : ''}
     <div class="rolagem"><table class="tabela">
-      <thead><tr><th>Aluno</th><th>CPF</th><th>Curso</th><th>Comprovante</th><th></th></tr></thead>
+      <thead><tr><th>Aluno</th><th>CPF</th><th>Instituição declarada</th><th>Curso</th><th>Comprovante</th><th></th></tr></thead>
       <tbody>${membros.map((m) => {
         const [ct, cc] = COMPROVANTE[m.comprovante_situacao] ?? [m.comprovante_situacao, 'selo-espera'];
         return `<tr>
           <td><div class="nome">${esc(m.nome || 'Sem nome')}${m.lider ? ' <span class="selo-lider">Líder</span>' : ''}</div><div class="suave">${esc(m.email)}</div></td>
           <td style="white-space:nowrap">${m.cpf ? esc(m.cpf) : '<span class="faltam">falta</span>'}</td>
+          <td>${m.ies_ok ? `<span class="selo selo-ok">${esc(m.ies_declarada)}</span>` : m.ies_declarada ? `<span class="selo selo-nao">${esc(m.ies_declarada)}</span>` : '<span class="faltam">não declarou</span>'}
+            ${m.universidade_perfil ? `<div class="suave" title="O que o aluno pôs no perfil do BolsaLab">perfil: ${esc(m.universidade_perfil)}</div>` : ''}</td>
           <td>${esc(m.curso)}<div class="suave">${esc(m.periodo)} período</div></td>
           <td><span class="selo ${cc}">${ct}</span></td>
           <td><div class="acoes-comp">

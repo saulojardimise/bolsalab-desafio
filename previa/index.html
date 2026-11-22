@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Inscrição · Desafio Carteira Recomendada 2027</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="estilo.css?v=202611220321">
+<link rel="stylesheet" href="estilo.css?v=202611220334">
 </head>
 <body>
 <header class="topo">
@@ -22,7 +22,7 @@
 <main id="tela" aria-live="polite"><p class="carregando">Carregando…</p></main>
 
 <script src="supabase-2.118.0.js"></script>
-<script src="olho.js?v=202611220321"></script>
+<script src="olho.js?v=202611220334"></script>
 <script>
 // Área de inscrição do desafio (versão de teste: só testadores conseguem agir enquanto o desafio estiver fechado).
 // As regras de verdade estão no banco (migrações 053 e 054); esta página só chama as funções.
@@ -164,13 +164,14 @@ function htmlConvitesRecebidos() {
   const destaque = Number(params.get('convite'));
   return `<section class="cartao">
     <h2>Você foi convidado</h2>
-    <p class="suave">Para entrar na equipe, informe seu curso, período e CPF e aceite. Se não conhece a equipe, recuse: aí você poderá criar a sua ou entrar com um código.</p>
+    <p class="suave">Para entrar na equipe, informe sua instituição, curso, período e CPF e aceite. Se não conhece a equipe, recuse: aí você poderá criar a sua ou entrar com um código.</p>
     ${estado.convites.map((c) => `<form class="convite-recebido ${c.id === destaque ? 'convite-destaque' : ''}" data-convite="${c.id}">
       <div class="convite-quem">
         <span class="avatar">${c.foto ? `<img src="${esc(c.foto)}" alt="">` : esc((c.lider || '?')[0])}</span>
         <div><strong>${esc(c.equipe)}</strong>
           <div class="suave">${esc(c.lider)} (líder) · ${esc(c.ies)} · ${c.integrantes} de 5</div></div>
       </div>
+      <label>Sua instituição <select name="ies" required>${opcoesIes()}</select></label>
       ${camposAluno()}
       <div class="convite-botoes">
         <button class="botao botao-principal" type="submit">Aceitar e entrar</button>
@@ -184,7 +185,7 @@ function ligarConvitesRecebidos() {
     ev.preventDefault();
     const d = new FormData(f);
     if (!cpfValido(d.get('cpf'))) { estado.recado = 'CPF inválido. Confira os números.'; return desenhar(); }
-    acao(() => rpc('desafio_responder_convite', { p_convite_id: Number(f.dataset.convite), p_aceitar: true, p_curso: d.get('curso'), p_periodo: d.get('periodo'), p_cpf: d.get('cpf') }), 'Você entrou na equipe!');
+    acao(() => rpc('desafio_responder_convite', { p_convite_id: Number(f.dataset.convite), p_aceitar: true, p_curso: d.get('curso'), p_periodo: d.get('periodo'), p_cpf: d.get('cpf'), p_ies_id: Number(d.get('ies')) || null }), 'Você entrou na equipe!');
   }));
   tela.querySelectorAll('[data-recusar]').forEach((b) => b.addEventListener('click', () =>
     confirmarDuasVezes(b, 'Recusar mesmo?', () => acao(() => rpc('desafio_responder_convite', { p_convite_id: Number(b.dataset.recusar), p_aceitar: false }), 'Convite recusado.'))));
@@ -219,6 +220,7 @@ function htmlSemEquipe() {
       </form>`
     : `<form id="form-entrar-equipe" class="cartao" style="padding:0;box-shadow:none;border:0">
         <label>Código da equipe <input name="codigo" required placeholder="Ex.: K7QM-3XPA" autocapitalize="characters" value="${esc(params.get('codigo') ?? '')}"></label>
+        <label>Sua instituição <select name="ies" required>${opcoesIes()}</select></label>
         ${camposAluno()}
         <button class="botao botao-principal" type="submit">Entrar na equipe</button>
       </form>`}
@@ -237,7 +239,7 @@ function ligarSemEquipe() {
       }
       return escolha === 'criar';
     });
-  enviar('form-entrar-equipe', (f) => rpc('desafio_entrar_equipe', { p_codigo: f.get('codigo'), p_curso: f.get('curso'), p_periodo: f.get('periodo'), p_cpf: f.get('cpf') }), 'Você entrou na equipe!');
+  enviar('form-entrar-equipe', (f) => rpc('desafio_entrar_equipe', { p_codigo: f.get('codigo'), p_curso: f.get('curso'), p_periodo: f.get('periodo'), p_cpf: f.get('cpf'), p_ies_id: Number(f.get('ies')) || null }), 'Você entrou na equipe!');
 }
 
 // ---------------------------------------------------------------- com equipe
@@ -313,11 +315,12 @@ function htmlEquipe(gestao) {
   </section>
 
   <div class="pilha">
-  ${gestao && e.meu_cpf === false ? `<form class="cartao" id="form-cpf">
-    <h2>Informe seu CPF</h2>
-    <p class="suave">A inscrição agora pede o CPF de cada integrante. Só a organização vê.</p>
-    <label>CPF <input name="cpf" class="campo-cpf" inputmode="numeric" autocomplete="off" required maxlength="14" placeholder="000.000.000-00"></label>
-    <button class="botao botao-principal" type="submit">Salvar CPF</button>
+  ${gestao && (e.meu_cpf === false || e.minha_ies === false) ? `<form class="cartao" id="form-cpf">
+    <h2>Complete sua inscrição</h2>
+    <p class="suave">A inscrição agora pede ${e.meu_cpf === false && e.minha_ies === false ? 'o CPF e a instituição' : e.meu_cpf === false ? 'o CPF' : 'a instituição'} de cada integrante.</p>
+    ${e.minha_ies === false ? '<label>Sua instituição <select name="ies" required>${opcoesIes()}</select></label>' : ''}
+    ${e.meu_cpf === false ? '<label>CPF <input name="cpf" class="campo-cpf" inputmode="numeric" autocomplete="off" required maxlength="14" placeholder="000.000.000-00"></label>' : ''}
+    <button class="botao botao-principal" type="submit">Salvar</button>
   </form>` : ''}
   <section class="cartao">
     <h2>Seu comprovante de matrícula</h2>
@@ -350,7 +353,7 @@ function ligarEquipe() {
   const sair = document.getElementById('sair-equipe');
   sair?.addEventListener('click', () => confirmarDuasVezes(sair, 'Toque de novo para sair', () => acao(() => rpc('desafio_sair_equipe'), 'Você saiu da equipe.')));
   document.getElementById('enviar-comprovante')?.addEventListener('click', enviarComprovante);
-  enviar('form-cpf', (f) => rpc('desafio_informar_cpf', { p_cpf: f.get('cpf') }), 'CPF salvo.');
+  enviar('form-cpf', (f) => rpc('desafio_informar_dados', { p_cpf: f.get('cpf') || null, p_ies_id: Number(f.get('ies')) || null }), 'Inscrição completa.');
   tela.querySelectorAll('[data-cancelar]').forEach((b) => b.addEventListener('click', () =>
     confirmarDuasVezes(b, 'Cancelar convite?', () => acao(() => rpc('desafio_cancelar_convite', { p_convite_id: Number(b.dataset.cancelar) }), 'Convite cancelado.'))));
   ligarBusca();
