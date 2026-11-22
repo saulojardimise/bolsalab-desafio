@@ -69,6 +69,10 @@ input:focus, select:focus { outline: 3px solid color-mix(in srgb, var(--verde) 3
 .integrantes { list-style: none; margin: 0; padding: 0; }
 .integrantes li { display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--linha); }
 .integrantes li:first-child { border-top: 0; }
+.integrantes li.eh-lider { background: var(--verde-fundo); border: 1.5px solid var(--verde); border-radius: 12px; padding-left: 10px; padding-right: 10px; margin: 2px 0 6px; }
+.integrantes li.eh-lider + li { border-top: 0; }
+.integrantes li.eh-lider .avatar { background: var(--verde); color: var(--cartao); box-shadow: 0 0 0 3px var(--cartao); }
+.selo-lider { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; vertical-align: 2px; font-size: 11px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--cartao); background: var(--verde); padding: 2px 8px; border-radius: 999px; }
 .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--verde-fundo); color: var(--verde-texto); display: grid; place-items: center; font-weight: 800; overflow: hidden; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 .integrantes .nome { font-weight: 700; color: var(--marinho); }
@@ -413,12 +417,13 @@ function htmlEquipe(gestao) {
 
   <section class="cartao">
     <h2>Integrantes (${qtd} de 5) <span class="suave" style="font-weight:500">· comprovantes</span></h2>
-    <ul class="integrantes">${membros.map((m) => {
+    <ul class="integrantes">${[...membros].sort((a, b) => b.lider - a.lider).map((m) => {
       const [ct, cc] = COMPROVANTE[m.comprovante] ?? [m.comprovante, 'selo-espera'];
       const iniciais = esc((m.nome || '?').split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase());
-      return `<li>
+      return `<li class="${m.lider ? 'eh-lider' : ''}">
         <span class="avatar">${m.foto ? `<img src="${esc(m.foto)}" alt="">` : iniciais}</span>
-        <div><div class="nome">${esc(m.nome || 'Sem nome')}${m.lider ? ' · líder' : ''}${m.user_id === eu ? ' (você)' : ''}</div>
+        <div><div class="nome">${esc(m.nome || 'Sem nome')}${m.user_id === eu ? ' <span class="suave" style="font-weight:500">(você)</span>' : ''}
+          ${m.lider ? '<span class="selo-lider"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5z"/></svg>Líder</span>' : ''}</div>
           <div class="suave">${esc(m.curso)} · ${esc(m.periodo)} per.</div>
           ${gestao && e.eu_lider && m.user_id !== eu ? `<div class="acoes-membro">
             <button class="botao-link" data-lider="${m.user_id}">Passar liderança</button>
