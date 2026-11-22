@@ -44,6 +44,8 @@ label { display: grid; gap: 6px; font-weight: 600; font-size: 14px; color: var(-
 input, select { font: inherit; font-weight: 500; color: var(--texto); background: var(--campo); border: 1.5px solid var(--linha); border-radius: 12px; padding: 12px 14px; min-height: 48px; width: 100%; }
 input:focus, select:focus { outline: 3px solid color-mix(in srgb, var(--verde) 35%, transparent); border-color: var(--verde); }
 .dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.trio { display: grid; grid-template-columns: 1.3fr .7fr 1.2fr; gap: 12px; }
+@media (max-width: 600px) { .trio { grid-template-columns: 1fr 1fr; } .trio label:last-child { grid-column: 1 / -1; } }
 .botao { font: inherit; font-weight: 800; border: 1.5px solid var(--linha); background: var(--cartao); color: var(--marinho); border-radius: 12px; min-height: 48px; padding: 0 18px; cursor: pointer; }
 .botao-principal { background: var(--verde); border-color: var(--verde); color: #fff; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .botao-principal { color: #062344; } }
@@ -193,7 +195,7 @@ function desenhar() {
   s.recado = ''; s.recadoOk = false;
 
   const podeAgir = s.situacao && (s.situacao.testador || s.situacao.inscricoes_abertas);
-  if (s.equipe) { colunas(3); tela.innerHTML = recado + htmlEquipe(); ligarEquipe(); return; }
+  if (s.equipe) { colunas(3); tela.innerHTML = recado + htmlEquipe(!!podeAgir); ligarEquipe(); ligarCpf(); return; }
   if (!podeAgir) {
     const inicio = s.situacao ? new Date(s.situacao.inscricoes_inicio).toLocaleDateString('pt-BR') : '01/02/2027';
     tela.innerHTML = recado + `<section class="cartao"><h2>As inscrições ainda não abriram</h2>
@@ -205,6 +207,7 @@ function desenhar() {
   tela.innerHTML = recado + (s.convites?.length ? htmlConvitesRecebidos() : htmlComoFunciona()) + htmlSemEquipe();
   ligarSemEquipe();
   ligarConvitesRecebidos();
+  ligarCpf();
 }
 
 // ---------------------------------------------------------------- entrar
@@ -239,11 +242,33 @@ function opcoesIes() {
     estado.ies.map((i) => `<option value="${i.id}">${esc(i.nome)}${i.sigla ? ` (${esc(i.sigla)})` : ''}</option>`).join('');
 }
 function camposAluno() {
-  return `<div class="dupla">
+  return `<div class="trio">
     <label>Seu curso <input name="curso" maxlength="80" required value="${esc(estado.rascunho?.curso ?? estado.perfil?.curso ?? '')}" placeholder="Ex.: Economia"></label>
     <label>Período <input name="periodo" maxlength="20" required value="${esc(estado.rascunho?.periodo ?? '')}" placeholder="Ex.: 5º"></label>
-  </div>`;
+  <label>CPF <input name="cpf" class="campo-cpf" inputmode="numeric" autocomplete="off" required maxlength="14" pattern="\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}" placeholder="000.000.000-00" value="${esc(estado.rascunho?.cpf ?? '')}"></label>
+  </div>
+  <p class="suave" style="margin-top:-4px">Só a organização vê o seu CPF. Cada CPF se inscreve uma vez.</p>`;
 }
+
+// 12345678909 -> 123.456.789-09 enquanto digita
+function mascaraCpf(campo) {
+  campo.addEventListener('input', () => {
+    const d = campo.value.replace(/\D/g, '').slice(0, 11);
+    campo.value = d.replace(/^(\d{3})(\d)/, '$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d{1,2})$/, '.$1-$2');
+  });
+}
+// confere os dígitos verificadores (o banco confere de novo)
+function cpfValido(v) {
+  const d = String(v).replace(/\D/g, '');
+  if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+  for (const k of [0, 1]) {
+    let s = 0;
+    for (let i = 0; i < 9 + k; i++) s += Number(d[i]) * (10 + k - i);
+    if ((s * 10) % 11 % 10 !== Number(d[9 + k])) return false;
+  }
+  return true;
+}
+function ligarCpf() { tela.querySelectorAll('.campo-cpf').forEach(mascaraCpf); }
 function htmlConvitesRecebidos() {
   const destaque = Number(params.get('convite'));
   return `<section class="cartao">
@@ -267,7 +292,8 @@ function ligarConvitesRecebidos() {
   tela.querySelectorAll('form[data-convite]').forEach((f) => f.addEventListener('submit', (ev) => {
     ev.preventDefault();
     const d = new FormData(f);
-    acao(() => rpc('desafio_responder_convite', { p_convite_id: Number(f.dataset.convite), p_aceitar: true, p_curso: d.get('curso'), p_periodo: d.get('periodo') }), 'Você entrou na equipe!');
+    if (!cpfValido(d.get('cpf'))) { estado.recado = 'CPF inválido. Confira os números.'; return desenhar(); }
+    acao(() => rpc('desafio_responder_convite', { p_convite_id: Number(f.dataset.convite), p_aceitar: true, p_curso: d.get('curso'), p_periodo: d.get('periodo'), p_cpf: d.get('cpf') }), 'Você entrou na equipe!');
   }));
   tela.querySelectorAll('[data-recusar]').forEach((b) => b.addEventListener('click', () =>
     confirmarDuasVezes(b, 'Recusar mesmo?', () => acao(() => rpc('desafio_responder_convite', { p_convite_id: Number(b.dataset.recusar), p_aceitar: false }), 'Convite recusado.'))));
@@ -298,7 +324,6 @@ function htmlSemEquipe() {
         <label>Nome da equipe <input name="nome" maxlength="30" required placeholder="Até 30 caracteres"></label>
         <label>Instituição <select name="ies" required>${opcoesIes()}</select></label>
         ${camposAluno()}
-        <p class="suave">Você será o líder: é quem envia a carteira todo mês.</p>
         <button class="botao botao-principal" type="submit">Criar equipe</button>
       </form>`
     : `<form id="form-entrar-equipe" class="cartao" style="padding:0;box-shadow:none;border:0">
@@ -310,18 +335,18 @@ function htmlSemEquipe() {
 }
 function ligarSemEquipe() {
   tela.querySelectorAll('[data-aba]').forEach((b) => b.addEventListener('click', () => { estado.aba = b.dataset.aba; desenhar(); }));
-  enviar('form-criar', (f) => rpc('desafio_criar_equipe', { p_nome: f.get('nome'), p_ies_id: Number(f.get('ies')) || null, p_curso: f.get('curso'), p_periodo: f.get('periodo') }), 'Equipe criada! Agora convide os colegas com o código.',
+  enviar('form-criar', (f) => rpc('desafio_criar_equipe', { p_nome: f.get('nome'), p_ies_id: Number(f.get('ies')) || null, p_curso: f.get('curso'), p_periodo: f.get('periodo'), p_cpf: f.get('cpf') }), 'Equipe criada! Agora convide os colegas com o código.',
     async (f) => {
       // evita equipes duplicadas: quem recebeu o código do líder deve entrar, não criar outra
       const escolha = await perguntar(f.get('nome'));
       if (escolha === 'codigo') {
-        estado.rascunho = { curso: f.get('curso'), periodo: f.get('periodo') };
+        estado.rascunho = { curso: f.get('curso'), periodo: f.get('periodo'), cpf: f.get('cpf') };
         estado.aba = 'entrar'; desenhar();
         document.querySelector('#form-entrar-equipe input[name=codigo]')?.focus();
       }
       return escolha === 'criar';
     });
-  enviar('form-entrar-equipe', (f) => rpc('desafio_entrar_equipe', { p_codigo: f.get('codigo'), p_curso: f.get('curso'), p_periodo: f.get('periodo') }), 'Você entrou na equipe!');
+  enviar('form-entrar-equipe', (f) => rpc('desafio_entrar_equipe', { p_codigo: f.get('codigo'), p_curso: f.get('curso'), p_periodo: f.get('periodo'), p_cpf: f.get('cpf') }), 'Você entrou na equipe!');
 }
 
 // ---------------------------------------------------------------- com equipe
@@ -332,7 +357,7 @@ const COMPROVANTE = {
   pendente: ['Sem comprovante', 'selo-espera'], enviado: ['Em análise', 'selo-espera'],
   aprovado: ['Aprovado', 'selo-ok'], recusado: ['Recusado', 'selo-nao'],
 };
-function htmlEquipe() {
+function htmlEquipe(gestao) {
   const e = estado.equipe, eu = estado.sessao.user.id;
   const membros = e.integrantes ?? [];
   const meu = membros.find((m) => m.user_id === eu);
@@ -354,18 +379,18 @@ function htmlEquipe() {
     ${e.situacao === 'aprovada' ? '<p class="ok">Equipe aprovada! A carteira de abril é enviada de 22 a 31/03/2027.</p>' : `
     <div><p style="font-weight:700;color:var(--marinho)">Para a equipe ser aprovada:</p>
       <ol class="passos">${passos.map(([feito, t]) => `<li class="${feito ? 'feito' : ''}">${t}</li>`).join('')}</ol></div>`}
-    ${qtd < 5 && e.situacao !== 'recusada' ? `<div>
+    ${!gestao ? '<p class="suave">As inscrições terminaram: a equipe não pode mais ser alterada.</p>' : ''}
+    ${gestao && e.eu_lider && qtd < 5 && e.situacao !== 'recusada' ? `<div>
       <p style="font-weight:700;color:var(--marinho);margin-bottom:6px">Convide os colegas</p>
-      ${e.eu_lider ? `<div class="busca">
+      <div class="busca">
         <label class="sr" for="busca-colega">Nome ou e-mail do colega</label>
         <input id="busca-colega" type="search" autocomplete="off" placeholder="Digite o nome ou o e-mail do colega" aria-describedby="busca-dica">
         <ul id="sugestoes" class="sugestoes" role="listbox" hidden></ul>
         <p id="busca-dica" class="suave" style="margin-top:4px">O colega recebe o convite no BolsaLab e por e-mail. Ou mande o código da equipe:</p>
-      </div>` : ''}
+      </div>
       <div class="codigo"><strong>${esc(e.codigo)}</strong>
         <button class="botao" id="copiar-link" type="button">Copiar convite</button></div>
-      ${e.eu_lider ? '' : '<p class="suave" style="margin-top:6px">Eles precisam ter conta no BolsaLab, da mesma instituição.</p>'}
-    </div>` : ''}
+    </div>` : gestao && !e.eu_lider && qtd < 5 ? '<p class="suave">Só o líder convida colegas para a equipe.</p>' : ''}
   </section>
 
   <section class="cartao">
@@ -377,7 +402,7 @@ function htmlEquipe() {
         <span class="avatar">${m.foto ? `<img src="${esc(m.foto)}" alt="">` : iniciais}</span>
         <div><div class="nome">${esc(m.nome || 'Sem nome')}${m.lider ? ' · líder' : ''}${m.user_id === eu ? ' (você)' : ''}</div>
           <div class="suave">${esc(m.curso)} · ${esc(m.periodo)} per.</div>
-          ${e.eu_lider && m.user_id !== eu ? `<div class="acoes-membro">
+          ${gestao && e.eu_lider && m.user_id !== eu ? `<div class="acoes-membro">
             <button class="botao-link" data-lider="${m.user_id}">Passar liderança</button>
             <button class="botao-link botao-perigo" data-remover="${m.user_id}">Remover</button></div>` : ''}
         </div>
@@ -389,24 +414,32 @@ function htmlEquipe() {
         <span class="avatar">${c.foto ? `<img src="${esc(c.foto)}" alt="">` : esc((c.nome || '?')[0])}</span>
         <div><div class="nome">${esc(c.nome)}</div>
           <div class="suave">${esc(c.email)} · ${c.email_situacao === 'enviado' ? 'app e e-mail' : 'só no app'}</div></div>
-        ${e.eu_lider ? `<button class="botao-link botao-perigo" data-cancelar="${c.id}">Cancelar</button>` : '<span class="selo selo-espera">Pendente</span>'}
+        ${gestao && e.eu_lider ? `<button class="botao-link botao-perigo" data-cancelar="${c.id}">Cancelar</button>` : '<span class="selo selo-espera">Pendente</span>'}
       </li>`).join('')}</ul></div>` : ''}
   </section>
 
-  <div class="pilha"><section class="cartao">
+  <div class="pilha">
+  ${gestao && e.meu_cpf === false ? `<form class="cartao" id="form-cpf">
+    <h2>Informe seu CPF</h2>
+    <p class="suave">A inscrição agora pede o CPF de cada integrante. Só a organização vê.</p>
+    <label>CPF <input name="cpf" class="campo-cpf" inputmode="numeric" autocomplete="off" required maxlength="14" placeholder="000.000.000-00"></label>
+    <button class="botao botao-principal" type="submit">Salvar CPF</button>
+  </form>` : ''}
+  <section class="cartao">
     <h2>Seu comprovante de matrícula</h2>
-    <p>${meu?.comprovante === 'pendente' ? 'Envie um comprovante de matrícula de 2027 (PDF, JPG ou PNG, até 5 MB).'
-        : meu?.comprovante === 'recusado' ? 'Seu comprovante foi recusado. Envie outro, legível e do semestre atual.'
-        : 'Comprovante enviado. Se precisar, você pode trocar por outro.'}</p>
+    ${meu?.comprovante === 'enviado' ? '<p class="selo selo-espera" style="justify-self:start">Comprovante em análise</p><p class="suave">A organização vai conferir. Se for recusado, você poderá enviar outro.</p>'
+      : meu?.comprovante === 'aprovado' ? '<p class="selo selo-ok" style="justify-self:start">Comprovante aprovado</p>'
+      : !gestao ? '<p class="suave">O prazo de envio terminou.</p>'
+      : `<p>${meu?.comprovante === 'recusado' ? 'Seu comprovante foi recusado. Envie outro, legível e do semestre atual.' : 'Envie um comprovante de matrícula de 2027 (PDF, JPG ou PNG, até 5 MB).'}</p>
     <label>Arquivo <input type="file" id="arquivo" accept="application/pdf,image/jpeg,image/png"></label>
-    <button class="botao botao-principal" id="enviar-comprovante" type="button">Enviar comprovante</button>
+    <button class="botao botao-principal" id="enviar-comprovante" type="button">Enviar comprovante</button>`}
   </section>
 
-  <section class="cartao">
+  ${gestao ? `<section class="cartao">
     <h2>Sair da equipe</h2>
     <p class="suave">${e.eu_lider && qtd > 1 ? 'Você é o líder: passe a liderança para outro integrante antes de sair.' : qtd === 1 ? 'Você é o único integrante: ao sair, a equipe deixa de existir.' : 'Você pode sair enquanto as inscrições estiverem abertas.'}</p>
     <button class="botao botao-perigo" id="sair-equipe" type="button" ${e.eu_lider && qtd > 1 ? 'disabled' : ''}>Sair da equipe</button>
-  </section></div>`;
+  </section>` : ''}</div>`;
 }
 function ligarEquipe() {
   const e = estado.equipe;
@@ -423,6 +456,7 @@ function ligarEquipe() {
   const sair = document.getElementById('sair-equipe');
   sair?.addEventListener('click', () => confirmarDuasVezes(sair, 'Toque de novo para sair', () => acao(() => rpc('desafio_sair_equipe'), 'Você saiu da equipe.')));
   document.getElementById('enviar-comprovante')?.addEventListener('click', enviarComprovante);
+  enviar('form-cpf', (f) => rpc('desafio_informar_cpf', { p_cpf: f.get('cpf') }), 'CPF salvo.');
   tela.querySelectorAll('[data-cancelar]').forEach((b) => b.addEventListener('click', () =>
     confirmarDuasVezes(b, 'Cancelar convite?', () => acao(() => rpc('desafio_cancelar_convite', { p_convite_id: Number(b.dataset.cancelar) }), 'Convite cancelado.'))));
   ligarBusca();
@@ -497,6 +531,7 @@ function enviar(id, chamar, sucesso, antes) {
   document.getElementById(id)?.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     const f = new FormData(ev.target);
+    if (f.has('cpf') && !cpfValido(f.get('cpf'))) { estado.recado = 'CPF inválido. Confira os números.'; return desenhar(); }
     if (antes && !(await antes(f))) return;
     acao(() => chamar(f), sucesso);
   });
