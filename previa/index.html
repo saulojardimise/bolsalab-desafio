@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Inscrição · Desafio Carteira Recomendada 2027</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="estilo.css?v=202611220334">
+<link rel="stylesheet" href="estilo.css?v=202611220343">
 </head>
 <body>
 <header class="topo">
@@ -22,7 +22,7 @@
 <main id="tela" aria-live="polite"><p class="carregando">Carregando…</p></main>
 
 <script src="supabase-2.118.0.js"></script>
-<script src="olho.js?v=202611220334"></script>
+<script src="olho.js?v=202611220343"></script>
 <script>
 // Área de inscrição do desafio (versão de teste: só testadores conseguem agir enquanto o desafio estiver fechado).
 // As regras de verdade estão no banco (migrações 053 e 054); esta página só chama as funções.
@@ -54,7 +54,8 @@ async function carregar() {
       rpc('desafio_situacao'),
       rpc('desafio_minha_equipe'),
       sb.from('desafio_ies').select('id, nome, sigla').eq('ativa', true).order('nome').then((r) => r.data ?? []),
-      sb.from('perfis').select('nome, curso').eq('user_id', session.user.id).maybeSingle().then((r) => r.data),
+      sb.from('perfis').select('nome, curso, instituicao_id').eq('user_id', session.user.id).maybeSingle()
+        .then((r) => r.error ? sb.from('perfis').select('nome, curso').eq('user_id', session.user.id).maybeSingle().then((x) => x.data) : r.data),
       rpc('desafio_meus_convites').catch(() => []),
     ]);
     Object.assign(estado, { situacao, equipe, ies, perfil, convites: convites ?? [] });
@@ -129,8 +130,9 @@ function desenharEntrada() {
 
 // ---------------------------------------------------------------- sem equipe
 function opcoesIes() {
+  const minha = estado.perfil?.instituicao_id;
   return '<option value="">Escolha a sua instituição</option>' +
-    estado.ies.map((i) => `<option value="${i.id}">${esc(i.nome)}${i.sigla ? ` (${esc(i.sigla)})` : ''}</option>`).join('');
+    estado.ies.map((i) => `<option value="${i.id}" ${i.id === minha ? 'selected' : ''}>${esc(i.nome)}${i.sigla ? ` (${esc(i.sigla)})` : ''}</option>`).join('');
 }
 function camposAluno() {
   return `<div class="trio">
@@ -318,7 +320,7 @@ function htmlEquipe(gestao) {
   ${gestao && (e.meu_cpf === false || e.minha_ies === false) ? `<form class="cartao" id="form-cpf">
     <h2>Complete sua inscrição</h2>
     <p class="suave">A inscrição agora pede ${e.meu_cpf === false && e.minha_ies === false ? 'o CPF e a instituição' : e.meu_cpf === false ? 'o CPF' : 'a instituição'} de cada integrante.</p>
-    ${e.minha_ies === false ? '<label>Sua instituição <select name="ies" required>${opcoesIes()}</select></label>' : ''}
+    ${e.minha_ies === false ? `<label>Sua instituição <select name="ies" required>${opcoesIes()}</select></label>` : ''}
     ${e.meu_cpf === false ? '<label>CPF <input name="cpf" class="campo-cpf" inputmode="numeric" autocomplete="off" required maxlength="14" placeholder="000.000.000-00"></label>' : ''}
     <button class="botao botao-principal" type="submit">Salvar</button>
   </form>` : ''}

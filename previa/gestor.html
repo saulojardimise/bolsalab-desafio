@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Organização · Desafio Carteira Recomendada 2027</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="estilo.css?v=202611220334">
+<link rel="stylesheet" href="estilo.css?v=202611220343">
 <style>
 main.gestor { max-width: 1240px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
 @media (max-width: 899px) { main.gestor { grid-template-columns: 1fr; } }
@@ -38,7 +38,7 @@ main.gestor { max-width: 1240px; display: grid; grid-template-columns: minmax(0,
 .lista-simples { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
 .lista-simples li { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
 .lateral { display: grid; gap: 16px; }
-.inativa { color: var(--suave); text-decoration: line-through; }
+.inativa { color: var(--suave); }
 .aluno-link { font: inherit; font-weight: 700; color: var(--marinho); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-decoration-color: var(--linha); text-underline-offset: 3px; }
 .aluno-link:hover { color: var(--verde); text-decoration-color: currentColor; }
 dialog.perfil { border: 0; border-radius: 18px; padding: 0; width: min(480px, calc(100vw - 32px)); background: var(--cartao); color: var(--texto); box-shadow: 0 20px 60px rgb(0 0 0 / .3); }
@@ -71,7 +71,7 @@ dialog.perfil::backdrop { background: rgb(6 35 68 / .55); }
 <main id="tela" aria-live="polite"><p class="carregando">Carregando…</p></main>
 
 <script src="supabase-2.118.0.js"></script>
-<script src="olho.js?v=202611220334"></script>
+<script src="olho.js?v=202611220343"></script>
 <script>
 // Área do professor: conferir comprovantes, aprovar ou recusar equipes, instituições e testadores.
 // Tudo passa pelas funções do banco que exigem o gestor (_exigir_gestor); a página só mostra.
@@ -218,7 +218,7 @@ function htmlEquipe(e) {
           <td><button class="aluno-link" data-perfil="${m.user_id}" data-equipe="${e.id}">${esc(m.nome || 'Sem nome')}</button>${m.lider ? ' <span class="selo-lider">Líder</span>' : ''}<div class="suave">${esc(m.email)}</div></td>
           <td style="white-space:nowrap">${m.cpf ? esc(m.cpf) : '<span class="faltam">falta</span>'}</td>
           <td>${m.ies_ok ? `<span class="selo selo-ok">${esc(m.ies_declarada)}</span>` : m.ies_declarada ? `<span class="selo selo-nao">${esc(m.ies_declarada)}</span>` : '<span class="faltam">não declarou</span>'}
-            ${m.universidade_perfil ? `<div class="${bateIes(m.universidade_perfil, e) ? 'suave' : 'faltam'}" title="Universidade que o aluno pôs no perfil do app BolsaLab (não é a declaração do desafio)">no app: ${esc(m.universidade_perfil)}${bateIes(m.universidade_perfil, e) ? '' : ' ⚠ diferente'}</div>` : ''}</td>
+            ${htmlNoApp(m, e)}</td>
           <td>${esc(m.curso)}<div class="suave">${esc(m.periodo)} período</div></td>
           <td><span class="selo ${cc}">${ct}</span></td>
           <td><div class="acoes-comp">
@@ -244,8 +244,9 @@ function htmlSituacao() {
 function htmlIes() {
   return `<section class="cartao">
     <h2>Instituições</h2>
+    <p class="suave">A mesma lista do app. Só as marcadas "no desafio" aparecem na inscrição.</p>
     <ul class="lista-simples">${estado.ies.map((i) => `<li><span class="${i.ativa ? '' : 'inativa'}">${esc(i.nome)}${i.sigla ? ` (${esc(i.sigla)})` : ''}</span>
-      <button class="botao-link ${i.ativa ? 'botao-perigo' : ''}" data-ies="${i.id}" data-ativa="${!i.ativa}">${i.ativa ? 'Desativar' : 'Ativar'}</button></li>`).join('') || '<li class="suave">Nenhuma cadastrada.</li>'}</ul>
+      <button class="botao-link ${i.ativa ? 'botao-perigo' : ''}" data-ies="${i.id}" data-ativa="${!i.ativa}">${i.ativa ? 'Tirar do desafio' : 'Pôr no desafio'}</button></li>`).join('') || '<li class="suave">Nenhuma cadastrada.</li>'}</ul>
     <form id="nova-ies" style="display:grid;gap:8px">
       <input name="nome" required placeholder="Nome da instituição">
       <div style="display:flex;gap:8px"><input name="sigla" placeholder="Sigla" style="flex:1"><button class="botao">Adicionar</button></div>
@@ -267,6 +268,15 @@ const normal = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/
 function bateIes(perfil, e) {
   const p = normal(perfil), alvo = [normal(e.ies), normal(e.ies_sigla)].filter(Boolean);
   return !p || alvo.some((a) => a === p || a.split(' ').includes(p) || a.includes(p) || p.includes(a));
+}
+
+// a instituição do perfil do app: pelo id (060); sem id, pelo texto
+function htmlNoApp(m, e) {
+  if (!m.universidade_perfil && !m.perfil_ies) return '<div class="suave">no app: não informou</div>';
+  const ok = m.perfil_ies_ok ?? (m.perfil_ies === undefined ? bateIes(m.universidade_perfil, e) : false);
+  const nome = m.perfil_ies || m.universidade_perfil;
+  const fora = m.perfil_ies === null && m.universidade_perfil ? ' (fora da lista)' : '';
+  return `<div class="${ok ? 'suave' : 'faltam'}" title="Instituição do perfil do app BolsaLab (não é a declaração do desafio)">no app: ${esc(nome)}${fora}${ok ? '' : ' ⚠ diferente'}</div>`;
 }
 
 // ---------------------------------------------------------------- perfil do aluno
@@ -347,7 +357,7 @@ function ligar() {
     acao(() => rpc('desafio_gestor_ies_ativa', { p_id: Number(b.dataset.ies), p_ativa: b.dataset.ativa === 'true' }), 'Instituição atualizada.'));
   document.getElementById('nova-ies').onsubmit = (ev) => {
     ev.preventDefault(); const f = new FormData(ev.target);
-    acao(() => rpc('desafio_gestor_ies', { p_nome: f.get('nome'), p_sigla: f.get('sigla') }), 'Instituição adicionada.');
+    acao(() => rpc('desafio_gestor_ies', { p_nome: f.get('nome'), p_sigla: f.get('sigla') }), 'Instituição no desafio (se já existia pela sigla ou nome, foi só ativada).');
   };
   tela.querySelectorAll('[data-tirar]').forEach((b) => b.onclick = () =>
     acao(() => rpc('desafio_gestor_testador', { p_email: b.dataset.tirar, p_incluir: false }), 'Testador retirado.'));
