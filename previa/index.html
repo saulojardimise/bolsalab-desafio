@@ -61,7 +61,9 @@ input:focus, select:focus { outline: 3px solid color-mix(in srgb, var(--verde) 3
 .selo-nao { background: var(--vermelho-fundo); color: var(--vermelho); }
 .equipe-topo { display: flex; justify-content: space-between; align-items: start; gap: 12px; flex-wrap: wrap; }
 .codigo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--fundo); border: 1.5px dashed var(--linha); border-radius: 12px; padding: 12px 14px; }
-.codigo strong { font-size: 22px; letter-spacing: 2px; color: var(--marinho); font-variant-numeric: tabular-nums; }
+.codigo { justify-content: space-between; padding: 8px 8px 8px 14px; }
+.codigo .botao { min-height: 38px; padding: 0 12px; font-size: 14px; }
+.codigo strong { font-size: 20px; letter-spacing: 2px; color: var(--marinho); font-variant-numeric: tabular-nums; }
 .integrantes { list-style: none; margin: 0; padding: 0; }
 .integrantes li { display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--linha); }
 .integrantes li:first-child { border-top: 0; }
@@ -97,11 +99,22 @@ input:focus, select:focus { outline: 3px solid color-mix(in srgb, var(--verde) 3
   input, select { min-height: 42px; padding: 8px 12px; }
   label { gap: 4px; }
   form.cartao { gap: 10px !important; }
-  main.colunas-3 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, .85fr); }
+  main.colunas-3 { grid-template-columns: minmax(0, .95fr) minmax(0, 1.4fr) minmax(0, .8fr); }
   .integrantes .suave { display: inline; }
   .acoes-membro { display: inline-flex; margin: 0 0 0 10px; gap: 10px; }
 }
 .como { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.busca { position: relative; }
+.sugestoes { position: absolute; left: 0; right: 0; top: 52px; z-index: 5; list-style: none; margin: 0; padding: 4px; border: 1.5px solid var(--linha); border-radius: 12px; background: var(--cartao); box-shadow: var(--sombra); display: grid; gap: 2px; }
+.sugestoes li { display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: center; padding: 6px 8px; border-radius: 8px; }
+.sugestoes li:hover { background: var(--fundo); }
+.sugestoes .avatar { width: 34px; height: 34px; font-size: 13px; }
+.sugestoes .botao { min-height: 36px; padding: 0 12px; font-size: 14px; }
+.sugestoes .sugestao-vazia { display: block; color: var(--suave); font-size: 14px; }
+.convite-recebido { display: grid; gap: 10px; padding: 14px; border: 1.5px solid var(--linha); border-radius: 14px; }
+.convite-destaque { border-color: var(--verde); }
+.convite-quem { display: grid; grid-template-columns: 40px 1fr; gap: 10px; align-items: center; }
+.convite-botoes { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
 dialog.pergunta { border: 0; border-radius: 18px; padding: 24px; width: min(440px, calc(100vw - 32px)); background: var(--cartao); color: var(--texto); box-shadow: 0 20px 60px rgb(0 0 0 / .3); }
 dialog.pergunta::backdrop { background: rgb(6 35 68 / .55); }
 dialog.pergunta h2 { margin: 0 0 10px; font-size: 20px; color: var(--marinho); }
@@ -151,13 +164,14 @@ async function carregar() {
   estado.sessao = session;
   if (!session) return desenhar();
   try {
-    const [situacao, equipe, ies, perfil] = await Promise.all([
+    const [situacao, equipe, ies, perfil, convites] = await Promise.all([
       rpc('desafio_situacao'),
       rpc('desafio_minha_equipe'),
       sb.from('desafio_ies').select('id, nome, sigla').eq('ativa', true).order('nome').then((r) => r.data ?? []),
       sb.from('perfis').select('nome, curso').eq('user_id', session.user.id).maybeSingle().then((r) => r.data),
+      rpc('desafio_meus_convites').catch(() => []),
     ]);
-    Object.assign(estado, { situacao, equipe, ies, perfil });
+    Object.assign(estado, { situacao, equipe, ies, perfil, convites: convites ?? [] });
   } catch (e) {
     estado.recado = msgErro(e);
   }
@@ -188,13 +202,15 @@ function desenhar() {
     return;
   }
   colunas(2);
-  tela.innerHTML = recado + htmlComoFunciona() + htmlSemEquipe();
+  tela.innerHTML = recado + (s.convites?.length ? htmlConvitesRecebidos() : htmlComoFunciona()) + htmlSemEquipe();
   ligarSemEquipe();
+  ligarConvitesRecebidos();
 }
 
 // ---------------------------------------------------------------- entrar
 function desenharEntrada() {
-  tela.innerHTML = `<section class="cartao">
+  colunas(2);
+  tela.innerHTML = htmlComoFunciona() + `<section class="cartao">
     <h2>Entre com a sua conta do BolsaLab</h2>
     <p class="suave">Só quem tem conta no BolsaLab participa. Use o mesmo e-mail e senha do app.</p>
     <form id="form-entrar" class="cartao" style="padding:0;box-shadow:none;border:0">
@@ -227,6 +243,34 @@ function camposAluno() {
     <label>Seu curso <input name="curso" maxlength="80" required value="${esc(estado.rascunho?.curso ?? estado.perfil?.curso ?? '')}" placeholder="Ex.: Economia"></label>
     <label>Período <input name="periodo" maxlength="20" required value="${esc(estado.rascunho?.periodo ?? '')}" placeholder="Ex.: 5º"></label>
   </div>`;
+}
+function htmlConvitesRecebidos() {
+  const destaque = Number(params.get('convite'));
+  return `<section class="cartao">
+    <h2>Você foi convidado</h2>
+    <p class="suave">Aceite o convite para entrar na equipe. Informe seu curso e período.</p>
+    ${estado.convites.map((c) => `<form class="convite-recebido ${c.id === destaque ? 'convite-destaque' : ''}" data-convite="${c.id}">
+      <div class="convite-quem">
+        <span class="avatar">${c.foto ? `<img src="${esc(c.foto)}" alt="">` : esc((c.lider || '?')[0])}</span>
+        <div><strong>${esc(c.equipe)}</strong>
+          <div class="suave">${esc(c.lider)} (líder) · ${esc(c.ies)} · ${c.integrantes} de 5</div></div>
+      </div>
+      ${camposAluno()}
+      <div class="convite-botoes">
+        <button class="botao botao-principal" type="submit">Aceitar e entrar</button>
+        <button class="botao" type="button" data-recusar="${c.id}">Recusar</button>
+      </div>
+    </form>`).join('')}
+  </section>`;
+}
+function ligarConvitesRecebidos() {
+  tela.querySelectorAll('form[data-convite]').forEach((f) => f.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const d = new FormData(f);
+    acao(() => rpc('desafio_responder_convite', { p_convite_id: Number(f.dataset.convite), p_aceitar: true, p_curso: d.get('curso'), p_periodo: d.get('periodo') }), 'Você entrou na equipe!');
+  }));
+  tela.querySelectorAll('[data-recusar]').forEach((b) => b.addEventListener('click', () =>
+    confirmarDuasVezes(b, 'Recusar mesmo?', () => acao(() => rpc('desafio_responder_convite', { p_convite_id: Number(b.dataset.recusar), p_aceitar: false }), 'Convite recusado.'))));
 }
 function htmlComoFunciona() {
   return `<section class="cartao">
@@ -312,15 +356,20 @@ function htmlEquipe() {
       <ol class="passos">${passos.map(([feito, t]) => `<li class="${feito ? 'feito' : ''}">${t}</li>`).join('')}</ol></div>`}
     ${qtd < 5 && e.situacao !== 'recusada' ? `<div>
       <p style="font-weight:700;color:var(--marinho);margin-bottom:6px">Convide os colegas</p>
+      ${e.eu_lider ? `<div class="busca">
+        <label class="sr" for="busca-colega">Nome ou e-mail do colega</label>
+        <input id="busca-colega" type="search" autocomplete="off" placeholder="Digite o nome ou o e-mail do colega" aria-describedby="busca-dica">
+        <ul id="sugestoes" class="sugestoes" role="listbox" hidden></ul>
+        <p id="busca-dica" class="suave" style="margin-top:4px">O colega recebe o convite no BolsaLab e por e-mail. Ou mande o código da equipe:</p>
+      </div>` : ''}
       <div class="codigo"><strong>${esc(e.codigo)}</strong>
         <button class="botao" id="copiar-link" type="button">Copiar convite</button></div>
-      <p class="suave" style="margin-top:6px">Eles precisam ter conta no BolsaLab, da mesma instituição.</p>
+      ${e.eu_lider ? '' : '<p class="suave" style="margin-top:6px">Eles precisam ter conta no BolsaLab, da mesma instituição.</p>'}
     </div>` : ''}
   </section>
 
   <section class="cartao">
-    <h2>Integrantes (${qtd} de 5)</h2>
-    <p class="suave" style="margin-top:-8px">À direita, a situação do comprovante de matrícula de cada um.</p>
+    <h2>Integrantes (${qtd} de 5) <span class="suave" style="font-weight:500">· comprovantes</span></h2>
     <ul class="integrantes">${membros.map((m) => {
       const [ct, cc] = COMPROVANTE[m.comprovante] ?? [m.comprovante, 'selo-espera'];
       const iniciais = esc((m.nome || '?').split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase());
@@ -334,6 +383,14 @@ function htmlEquipe() {
         </div>
         <span class="selo ${cc}">${ct}</span>
       </li>`; }).join('')}</ul>
+    ${(e.convites ?? []).length ? `<div>
+      <p style="font-weight:700;color:var(--marinho)">Convites esperando resposta</p>
+      <ul class="integrantes">${e.convites.map((c) => `<li>
+        <span class="avatar">${c.foto ? `<img src="${esc(c.foto)}" alt="">` : esc((c.nome || '?')[0])}</span>
+        <div><div class="nome">${esc(c.nome)}</div>
+          <div class="suave">${esc(c.email)} · ${c.email_situacao === 'enviado' ? 'app e e-mail' : 'só no app'}</div></div>
+        ${e.eu_lider ? `<button class="botao-link botao-perigo" data-cancelar="${c.id}">Cancelar</button>` : '<span class="selo selo-espera">Pendente</span>'}
+      </li>`).join('')}</ul></div>` : ''}
   </section>
 
   <div class="pilha"><section class="cartao">
@@ -366,6 +423,47 @@ function ligarEquipe() {
   const sair = document.getElementById('sair-equipe');
   sair?.addEventListener('click', () => confirmarDuasVezes(sair, 'Toque de novo para sair', () => acao(() => rpc('desafio_sair_equipe'), 'Você saiu da equipe.')));
   document.getElementById('enviar-comprovante')?.addEventListener('click', enviarComprovante);
+  tela.querySelectorAll('[data-cancelar]').forEach((b) => b.addEventListener('click', () =>
+    confirmarDuasVezes(b, 'Cancelar convite?', () => acao(() => rpc('desafio_cancelar_convite', { p_convite_id: Number(b.dataset.cancelar) }), 'Convite cancelado.'))));
+  ligarBusca();
+}
+
+// autopreenchimento: a partir de 4 letras, até 5 colegas (nome, foto e e-mail mascarado)
+function ligarBusca() {
+  const campo = document.getElementById('busca-colega'), lista = document.getElementById('sugestoes');
+  if (!campo) return;
+  let espera, pedido = 0;
+  const mostrar = (html) => { lista.innerHTML = html; lista.hidden = !html; };
+  campo.addEventListener('input', () => {
+    clearTimeout(espera);
+    const texto = campo.value.trim();
+    if (texto.length < 4) return mostrar(texto ? '<li class="sugestao-vazia">Digite pelo menos 4 letras…</li>' : '');
+    espera = setTimeout(async () => {
+      const meu = ++pedido;
+      try {
+        const achados = await rpc('desafio_buscar_colega', { p_texto: texto });
+        if (meu !== pedido) return;
+        mostrar(achados.length ? achados.map((p) => `<li role="option">
+            <span class="avatar">${p.foto ? `<img src="${esc(p.foto)}" alt="">` : esc((p.nome || '?')[0])}</span>
+            <span><strong>${esc(p.nome || 'Sem nome')}</strong><span class="suave"> ${esc(p.email)}</span></span>
+            ${p.convidado ? '<span class="selo selo-espera">Convidado</span>' : `<button class="botao" type="button" data-convidar="${p.user_id}">Convidar</button>`}
+          </li>`).join('')
+          : '<li class="sugestao-vazia">Ninguém encontrado. A pessoa precisa ter conta no BolsaLab e ainda não estar em uma equipe.</li>');
+        lista.querySelectorAll('[data-convidar]').forEach((b) => b.addEventListener('click', () => convidar(b.dataset.convidar)));
+      } catch (e) { if (meu === pedido) mostrar(`<li class="sugestao-vazia">${esc(msgErro(e))}</li>`); }
+    }, 300);
+  });
+}
+
+async function convidar(userId) {
+  await acao(async () => {
+    const id = await rpc('desafio_convidar', { p_user_id: userId });
+    // o e-mail é um extra: se falhar ou passar do limite do dia, o convite continua valendo no app
+    let email = null;
+    try { const r = await sb.functions.invoke('desafio-convite', { body: { convite_id: id } }); email = r.data?.situacao; } catch { /* segue */ }
+    return email;
+  }, (email) => email === 'enviado' ? 'Convite enviado no BolsaLab e por e-mail.'
+      : 'Convite enviado! O colega vai ver no BolsaLab (o e-mail não saiu agora, mas o convite vale do mesmo jeito).');
 }
 
 async function enviarComprovante() {
@@ -390,7 +488,7 @@ function confirmarDuasVezes(botao, texto, fazer) {
 }
 async function acao(fazer, sucesso) {
   tela.querySelectorAll('button').forEach((b) => (b.disabled = true));
-  try { await fazer(); estado.recado = sucesso; estado.recadoOk = true; }
+  try { const r = await fazer(); estado.recado = typeof sucesso === 'function' ? sucesso(r) : sucesso; estado.recadoOk = true; }
   catch (e) { estado.recado = msgErro(e); }
   await carregar();
   window.scrollTo({ top: 0, behavior: 'smooth' });
