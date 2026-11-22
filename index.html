@@ -58,7 +58,7 @@ a:focus-visible { outline: 3px solid var(--verde); outline-offset: 3px; border-r
 @media (max-width: 860px) {
   .pagina { min-height: 560px; padding-left: 16px; padding-right: 16px; }
   header a.app { font-size: 14px; }
-  main { grid-template-columns: 1fr; align-content: safe center; gap: clamp(12px, 2.4vh, 22px); }
+  main { grid-template-columns: 1fr; align-content: safe center; gap: clamp(12px, 2.4vh, 22px); padding: clamp(12px, 2.4vh, 22px) 0 clamp(8px, 1.6vh, 14px); }
   h1 { font-size: clamp(28px, min(9.6vw, 5.4vh), 48px); }
   .breve { font-size: clamp(17px, 2.8vh, 22px); }
   .lead { font-size: clamp(14px, 2vh, 16px); }
@@ -70,7 +70,8 @@ a:focus-visible { outline: 3px solid var(--verde); outline-offset: 3px; border-r
 }
 @media (max-width: 860px) and (max-height: 1000px) { .lead { display: none; } }
 @media (max-width: 860px) and (max-height: 700px) { .nota { display: none; } .datas li { padding: 5px 0; } }
-@media (max-width: 860px) and (max-height: 620px) { .novidades, .selo { display: none; } h1 { margin-top: 0; } }
+@media (max-width: 860px) and (max-height: 760px) { .selo { display: none; } h1 { margin-top: 0; } }
+@media (max-width: 860px) and (max-height: 620px) { .novidades { display: none; } }
 @media (prefers-reduced-motion: no-preference) {
   main > * { animation: sobe .7s cubic-bezier(.2,.8,.2,1) both; }
   main > *:nth-child(2) { animation-delay: .12s; }
