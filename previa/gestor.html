@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Organização · Desafio Carteira Recomendada 2027</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="estilo.css?v=202611220356">
+<link rel="stylesheet" href="estilo.css?v=202611231048">
 <style>
 main.gestor { max-width: 1240px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
 @media (max-width: 899px) { main.gestor { grid-template-columns: 1fr; } }
@@ -71,7 +71,7 @@ dialog.perfil::backdrop { background: rgb(6 35 68 / .55); }
 <main id="tela" aria-live="polite"><p class="carregando">Carregando…</p></main>
 
 <script src="supabase-2.118.0.js"></script>
-<script src="olho.js?v=202611220356"></script>
+<script src="olho.js?v=202611231048"></script>
 <script>
 // Área do professor: conferir comprovantes, aprovar ou recusar equipes, instituições e testadores.
 // Tudo passa pelas funções do banco que exigem o gestor (_exigir_gestor); a página só mostra.
@@ -103,7 +103,8 @@ async function carregar() {
       sb.from('desafio_ies').select('id, nome, sigla, ativa').order('nome').then((r) => r.data ?? []),
       rpc('desafio_gestor_testadores'),
     ]);
-    Object.assign(estado, { situacao, equipes: equipes ?? [], ies, testadores: testadores ?? [] });
+    const avisos = await rpc('desafio_gestor_avisos').catch(() => []);
+    Object.assign(estado, { situacao, equipes: equipes ?? [], ies, testadores: testadores ?? [], avisos: avisos ?? [] });
   } catch (e) { estado.recado = msgErro(e); }
   desenhar();
 }
@@ -166,7 +167,7 @@ function desenhar() {
     </div>
     ${lista.length ? lista.map(htmlEquipe).join('') : `<section class="cartao"><p class="suave">${s.filtro === 'conferir' ? 'Nada esperando você agora.' : 'Nenhuma equipe encontrada.'}</p></section>`}
   </div>
-  <aside class="lateral">${htmlSituacao()}${htmlIes()}${htmlTestadores()}</aside>`;
+  <aside class="lateral">${htmlSituacao()}${htmlAvisosGestor()}${htmlIes()}${htmlTestadores()}</aside>`;
   ligar();
 }
 
@@ -221,6 +222,20 @@ function htmlSituacao() {
     <p>${s.liberado ? '<span class="selo selo-ok">Desafio liberado</span>' : '<span class="selo selo-espera">Fechado: só testadores</span>'}</p>
     <p class="suave">Inscrições de ${ini} a ${fim}${s.inscricoes_abertas ? ' (abertas agora)' : ''}.</p>
     <p class="suave">Para liberar para todos, rode no SQL Editor: <code>select desafio_gestor_liberar(true);</code></p>
+  </section>`;
+}
+function htmlAvisosGestor() {
+  return `<section class="cartao">
+    <h2>Avisos</h2>
+    <form id="novo-aviso" style="display:grid;gap:8px">
+      <input name="titulo" required maxlength="120" placeholder="Título">
+      <textarea name="texto" required rows="3" maxlength="4000" placeholder="Aviso para as equipes"></textarea>
+      <select name="equipe" aria-label="Para quem"><option value="">Todas as equipes</option>
+        ${estado.equipes.map((e) => `<option value="${e.id}">Só ${esc(e.nome)}</option>`).join('')}</select>
+      <button class="botao botao-principal">Publicar aviso</button>
+    </form>
+    <ul class="lista-simples">${(estado.avisos ?? []).map((a) => `<li><span><strong>${esc(a.titulo)}</strong><br><span class="suave">${new Date(a.criado_em).toLocaleDateString('pt-BR')} · ${a.equipe ? 'só ' + esc(a.equipe) : 'todas'}</span></span>
+      <button class="botao-link botao-perigo" data-apagar-aviso="${a.id}">Apagar</button></li>`).join('')}</ul>
   </section>`;
 }
 function htmlIes() {
@@ -337,6 +352,14 @@ function ligar() {
   });
   tela.querySelectorAll('[data-ies]').forEach((b) => b.onclick = () =>
     acao(() => rpc('desafio_gestor_ies_ativa', { p_id: Number(b.dataset.ies), p_ativa: b.dataset.ativa === 'true' }), 'Instituição atualizada.'));
+  document.getElementById('novo-aviso').onsubmit = (ev) => {
+    ev.preventDefault(); const f = new FormData(ev.target);
+    acao(() => rpc('desafio_gestor_aviso', { p_titulo: f.get('titulo'), p_texto: f.get('texto'), p_equipe_id: Number(f.get('equipe')) || null }), 'Aviso publicado.');
+  };
+  tela.querySelectorAll('[data-apagar-aviso]').forEach((b) => b.onclick = () => {
+    if (!b.dataset.confirmar) { b.dataset.confirmar = '1'; b.textContent = 'Apagar mesmo?'; return; }
+    acao(() => rpc('desafio_gestor_apagar_aviso', { p_id: Number(b.dataset.apagarAviso) }), 'Aviso apagado.');
+  });
   document.getElementById('nova-ies').onsubmit = (ev) => {
     ev.preventDefault(); const f = new FormData(ev.target);
     acao(() => rpc('desafio_gestor_ies', { p_nome: f.get('nome'), p_sigla: f.get('sigla') }), 'Instituição no desafio (se já existia pela sigla ou nome, foi só ativada).');

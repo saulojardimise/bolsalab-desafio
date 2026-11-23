@@ -2,7 +2,7 @@
 // O líder monta a carteira do mês: 3 a 7 ativos, comprado ou vendido, percentuais que somam 100%,
 // uma tese por ativo e o cenário econômico. Os outros integrantes só veem a carteira enviada.
 // As regras também são conferidas no banco (desafio_enviar_carteira); aqui é para ajudar a montar.
-// O rascunho fica guardado neste navegador até ser enviado.
+// O rascunho fica guardado no banco (qualquer aparelho) e neste navegador até ser enviado.
 /* global sb, rpc, estado, esc, tela, msgErro, desenhar, carregar, confirmarDuasVezes */
 
 const CLASSES = { acao: 'Ação', etf: 'ETF', bdr: 'BDR', tesouro: 'Tesouro', minicontrato: 'Minicontrato' };
@@ -23,11 +23,30 @@ const pctTxt = (v) => `${(Math.round(v * 100) / 100).toLocaleString('pt-BR')}%`;
 const classeDe = (ativo) => (cart.ativos.find((a) => a.ticker === ativo)?.tipo) ?? null;
 
 function chaveRascunho() { return `desafio:rascunho:${estado.sessao?.user.id}:${cart.janela?.id}`; }
+// o rascunho vai para o banco (vale em qualquer aparelho) e, por garantia, fica neste navegador também
+let esperaSalvar = null;
 function guardarRascunho() {
+  try { localStorage.setItem(chaveRascunho(), JSON.stringify({ posicoes: cart.posicoes, cenario: cart.cenario, em: Date.now() })); } catch { /* segue */ }
+  cart.situacaoRascunho = 'pendente'; pintarRascunho();
+  clearTimeout(esperaSalvar);
+  esperaSalvar = setTimeout(salvarNoServidor, 1500);
+}
+async function salvarNoServidor() {
+  clearTimeout(esperaSalvar);
+  if (!cart.janela) return;
+  cart.situacaoRascunho = 'salvando'; pintarRascunho();
   try {
-    localStorage.setItem(chaveRascunho(), JSON.stringify({ posicoes: cart.posicoes, cenario: cart.cenario, em: Date.now() }));
-    cart.salvoEm = Date.now();
-  } catch { /* sem armazenamento: segue só na memória */ }
+    const em = await rpc('desafio_salvar_rascunho', { p_janela: cart.janela.id, p_cenario: cart.cenario, p_posicoes: cart.posicoes });
+    cart.salvoEm = Date.parse(em); cart.situacaoRascunho = 'salvo';
+  } catch (e) { cart.situacaoRascunho = 'erro'; cart.erroRascunho = msgErro(e); }
+  pintarRascunho();
+}
+function pintarRascunho() {
+  const el = document.getElementById('rascunho-estado'); if (!el) return;
+  const hora = cart.salvoEm ? new Date(cart.salvoEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+  el.textContent = { pendente: 'Alterações ainda não salvas…', salvando: 'Salvando rascunho…', erro: `Não salvou no servidor: ${cart.erroRascunho} (ficou guardado neste navegador)` }[cart.situacaoRascunho]
+    ?? (cart.salvoEm ? `Rascunho salvo em ${hora}. Vale em qualquer aparelho.` : '');
+  el.className = cart.situacaoRascunho === 'erro' ? 'faltam' : 'suave';
 }
 function lerRascunho() { try { return JSON.parse(localStorage.getItem(chaveRascunho()) || 'null'); } catch { return null; } }
 function apagarRascunho() { try { localStorage.removeItem(chaveRascunho()); } catch { /* nada */ } }
@@ -54,12 +73,22 @@ async function abrirCarteira() {
 }
 
 async function carregarJanela() {
-  cart.enviada = cart.janela ? await rpc('desafio_minha_carteira', { p_janela: cart.janela.id }).catch(() => null) : null;
-  const r = estado.equipe?.eu_lider ? lerRascunho() : null;
-  const base = r ?? (cart.enviada ? { posicoes: cart.enviada.posicoes, cenario: cart.enviada.cenario } : null);
+  const lider = estado.equipe?.eu_lider;
+  const [enviada, servidor] = await Promise.all([
+    cart.janela ? rpc('desafio_minha_carteira', { p_janela: cart.janela.id }).catch(() => null) : null,
+    cart.janela && lider ? rpc('desafio_meu_rascunho', { p_janela: cart.janela.id }).catch(() => null) : null,
+  ]);
+  cart.enviada = enviada;
+  // o rascunho mais novo vence (o do banco ou o deste navegador); sem rascunho, parte da carteira enviada
+  const local = lider ? lerRascunho() : null;
+  const doServidor = servidor ? { ...servidor, em: Date.parse(servidor.atualizado_em) } : null;
+  const r = [local, doServidor].filter(Boolean).sort((a, b) => b.em - a.em)[0] ?? null;
+  const base = r ?? (enviada ? { posicoes: enviada.posicoes, cenario: enviada.cenario } : null);
   cart.posicoes = (base?.posicoes ?? []).map((p) => ({ ativo: p.ativo, lado: p.lado || 'comprado', peso: String(p.peso ?? '').replace('.', ','), tese: p.tese ?? '' }));
   cart.cenario = base?.cenario ?? '';
-  cart.salvoEm = r?.em ?? null;
+  cart.salvoEm = doServidor?.em ?? null;
+  cart.situacaoRascunho = r && r === local && (!doServidor || local.em > doServidor.em) ? 'pendente' : null;
+  if (cart.situacaoRascunho === 'pendente' && lider && estado.equipe.situacao === 'aprovada') setTimeout(salvarNoServidor, 500);
   cart.sel = cart.posicoes.length ? 0 : 'cenario';
 }
 
@@ -96,6 +125,10 @@ function htmlCarteira() {
     : `<strong>${esc(j.rotulo)}</strong>`;
   const prazo = `Envio de ${dataBR(j.abre)} a ${dataBR(j.fecha)} · vale de ${dataBR(j.vale_de + 'T12:00:00Z')} a ${dataBR(j.vale_ate + 'T12:00:00Z')}`;
 
+  if (e.situacao !== 'aprovada' && !cart.enviada) {
+    return `<section class="cartao" style="grid-column:1/-1"><h2>A carteira abre quando a equipe for aprovada</h2>
+      <p>Depois que a organização aprovar a inscrição, o líder pode montar a carteira com calma e deixar salva. O envio só vale no prazo de cada mês.</p></section>`;
+  }
   if (!lider) {
     const c = cart.enviada;
     return `<section class="cartao carteira-cabeca" style="grid-column:1/-1">${seletor}<p class="suave">${prazo}</p></section>
@@ -151,8 +184,9 @@ function htmlCarteira() {
     <ul class="checagem" id="checagem">${htmlChecagem(r)}</ul>
     ${cart.enviada ? `<p class="ok">Enviada em ${new Date(cart.enviada.enviada_em).toLocaleString('pt-BR')}.${aberta || s.testador ? ' Dá para reenviar até o fim do prazo.' : ''}</p>` : ''}
     <button class="botao botao-principal" id="enviar-carteira" ${podeEnviar && r.pronta ? '' : 'disabled'}>${cart.enviada ? 'Reenviar carteira' : 'Enviar carteira'}</button>
-    <p class="suave" id="aviso-envio">${!podeEnviar ? (e.situacao !== 'aprovada' ? 'A equipe precisa ser aprovada para enviar.' : `O envio abre em ${dataBR(j.abre)}.`) : r.pronta ? 'Tudo certo para enviar.' : 'Complete os itens acima para enviar.'}</p>
-    <p class="suave">${cart.salvoEm ? 'Rascunho salvo neste navegador.' : ''}</p>
+    <p class="suave" id="aviso-envio">${!podeEnviar ? (e.situacao !== 'aprovada' ? 'A equipe precisa ser aprovada para enviar.' : agora > Date.parse(j.fecha) ? 'O prazo de envio deste mês terminou.' : `O envio abre em ${dataBR(j.abre)}. Até lá, vá montando: o rascunho fica salvo.`) : r.pronta ? 'Tudo certo para enviar.' : 'Complete os itens acima para enviar.'}</p>
+    <button class="botao" id="salvar-rascunho" type="button">Salvar rascunho</button>
+    <p id="rascunho-estado" class="suave"></p>
   </section>`;
 }
 
@@ -230,6 +264,8 @@ function ligarCarteira() {
   };
   novo?.addEventListener('change', adicionar);
   novo?.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); adicionar(); } });
+  document.getElementById('salvar-rascunho')?.addEventListener('click', salvarNoServidor);
+  pintarRascunho();
   document.getElementById('enviar-carteira')?.addEventListener('click', async (ev) => {
     ev.target.disabled = true;
     try {
@@ -238,7 +274,7 @@ function ligarCarteira() {
         p_posicoes: cart.posicoes.map((x) => ({ ativo: x.ativo, lado: x.lado, peso: num(x.peso), tese: x.tese })),
         p_janela: estado.situacao.testador ? cart.janela.id : null,
       });
-      apagarRascunho();
+      apagarRascunho(); clearTimeout(esperaSalvar);
       estado.recado = `${cart.janela.rotulo} enviada!`; estado.recadoOk = true;
       await carregarJanela();
     } catch (e) { estado.recado = msgErro(e); }

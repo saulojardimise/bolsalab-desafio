@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Inscrição · Desafio Carteira Recomendada 2027</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="estilo.css?v=202611220356">
+<link rel="stylesheet" href="estilo.css?v=202611231048">
 </head>
 <body>
 <header class="topo">
@@ -22,8 +22,8 @@
 <main id="tela" aria-live="polite"><p class="carregando">Carregando…</p></main>
 
 <script src="supabase-2.118.0.js"></script>
-<script src="carteira.js?v=202611220356"></script>
-<script src="olho.js?v=202611220356"></script>
+<script src="carteira.js?v=202611231048"></script>
+<script src="olho.js?v=202611231048"></script>
 <script>
 // Área de inscrição do desafio (versão de teste: só testadores conseguem agir enquanto o desafio estiver fechado).
 // As regras de verdade estão no banco (migrações 053 e 054); esta página só chama as funções.
@@ -60,6 +60,7 @@ async function carregar() {
       rpc('desafio_meus_convites').catch(() => []),
     ]);
     Object.assign(estado, { situacao, equipe, ies, perfil, convites: convites ?? [] });
+    estado.avisos = equipe ? await rpc('desafio_meus_avisos').catch(() => []) : [];
     // um login só: o gestor vai direto para a área da organização (a não ser que peça para ver como participante)
     if (situacao?.gestor && !params.has('participante')) { location.replace('gestor.html'); return; }
   } catch (e) {
@@ -70,16 +71,34 @@ async function carregar() {
 
 function colunas(n) { tela.className = n > 1 ? `colunas-${n}` : ''; }
 
+// gestão da equipe (convidar, sair, comprovante...) só durante as inscrições.
+// O testador pode simular "inscrições encerradas" para ver como fica depois.
+function emGestao() {
+  const s = estado.situacao;
+  if (!s) return false;
+  return s.testador ? !estado.simularFechadas : !!s.inscricoes_abertas;
+}
+const ABAS = [['equipe', 'Equipe'], ['carteira', 'Carteira'], ['ranking', 'Ranking'], ['avisos', 'Avisos']];
+function avisosNovos() {
+  let visto = 0; try { visto = Number(localStorage.getItem('desafio:avisos-vistos') || 0); } catch { /* segue */ }
+  return (estado.avisos ?? []).filter((a) => a.id > visto).length;
+}
+
 function desenhar() {
   const s = estado;
   colunas(1);
-  const abas = s.equipe ? `<nav class="abas-topo" aria-label="Seções">
-      <button data-aba-topo="equipe" aria-current="${s.abaTopo !== 'carteira' ? 'page' : 'false'}">Equipe</button>
-      <button data-aba-topo="carteira" aria-current="${s.abaTopo === 'carteira' ? 'page' : 'false'}">Carteira</button></nav>` : '';
+  // depois das inscrições, a primeira aba é a da carteira
+  if (s.equipe && !s.abaTopo) s.abaTopo = emGestao() ? 'equipe' : 'carteira';
+  const novos = avisosNovos();
+  const abas = s.equipe ? `<nav class="abas-topo" aria-label="Seções">${ABAS.map(([id, nome]) =>
+      `<button data-aba-topo="${id}" aria-current="${s.abaTopo === id ? 'page' : 'false'}">${nome}${id === 'avisos' && novos ? ` <span class="contador-aba">${novos}</span>` : ''}</button>`).join('')}</nav>` : '';
+  const simular = s.equipe && s.situacao?.testador
+    ? `<select id="simular" class="simular" aria-label="Simular período (só testes)"><option value="">Teste: inscrições abertas</option><option value="1" ${s.simularFechadas ? 'selected' : ''}>Teste: encerradas</option></select>` : '';
   topoDireita.innerHTML = s.sessao
-    ? `${abas}${s.situacao?.testador && !s.situacao?.liberado ? '<span class="faixa-teste">MODO TESTE</span> ' : ''}${s.situacao?.gestor ? '<a class="sair" href="gestor.html" style="text-decoration:none">Organização</a> ' : ''}<button class="sair" id="sair">Sair</button>`
+    ? `${abas}${s.situacao?.testador && !s.situacao?.liberado ? '<span class="faixa-teste">MODO TESTE</span> ' : ''}${simular}${s.situacao?.gestor ? '<a class="sair" href="gestor.html" style="text-decoration:none">Organização</a> ' : ''}<button class="sair" id="sair">Sair</button>`
     : '';
   topoDireita.querySelectorAll('[data-aba-topo]').forEach((b) => b.addEventListener('click', () => { s.abaTopo = b.dataset.abaTopo; desenhar(); }));
+  document.getElementById('simular')?.addEventListener('change', (ev) => { s.simularFechadas = !!ev.target.value; s.abaTopo = s.simularFechadas ? 'carteira' : 'equipe'; desenhar(); });
   document.getElementById('sair')?.addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
 
   if (!s.sessao) return desenharEntrada();
@@ -94,7 +113,14 @@ function desenhar() {
     ligarCarteira();
     return;
   }
-  if (s.equipe) { colunas(3); tela.innerHTML = recado + htmlEquipe(!!podeAgir); ligarEquipe(); ligarCpf(); return; }
+  if (s.equipe && s.abaTopo === 'ranking') { tela.className = 'estreito'; tela.innerHTML = recado + htmlRanking(); return; }
+  if (s.equipe && s.abaTopo === 'avisos') {
+    tela.className = 'estreito'; tela.innerHTML = recado + htmlAvisos();
+    try { localStorage.setItem('desafio:avisos-vistos', String(Math.max(0, ...(s.avisos ?? []).map((a) => a.id)))); } catch { /* segue */ }
+    return;
+  }
+  if (s.equipe && !emGestao()) { colunas(2); tela.innerHTML = recado + htmlEquipeFechada(); return; }
+  if (s.equipe) { colunas(3); tela.innerHTML = recado + htmlEquipe(true); ligarEquipe(); ligarCpf(); return; }
   if (!podeAgir) {
     const inicio = s.situacao ? new Date(s.situacao.inscricoes_inicio).toLocaleDateString('pt-BR') : '01/02/2027';
     tela.innerHTML = recado + `<section class="cartao"><h2>As inscrições ainda não abriram</h2>
@@ -266,6 +292,52 @@ const COMPROVANTE = {
   pendente: ['Sem comprovante', 'selo-espera'], enviado: ['Em análise', 'selo-espera'],
   aprovado: ['Aprovado', 'selo-ok'], recusado: ['Recusado', 'selo-nao'],
 };
+const dataHora = (d) => d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+
+// depois das inscrições: só as informações da equipe, sem convites nem mudanças
+function htmlEquipeFechada() {
+  const e = estado.equipe, eu = estado.sessao.user.id;
+  const membros = [...(e.integrantes ?? [])].sort((a, b) => b.lider - a.lider);
+  const [sit, sitClasse] = SITUACAO[e.situacao] ?? [e.situacao, 'selo-espera'];
+  return `<section class="cartao">
+    <div class="equipe-topo"><div><h2>${esc(e.nome)}</h2><p class="suave">${esc(e.ies)}</p></div><span class="selo ${sitClasse}">${sit}</span></div>
+    ${e.situacao === 'aprovada'
+      ? `<p class="ok">Inscrição aprovada em ${dataHora(e.aprovada_em)}.</p>${e.fora_do_desafio ? `<p class="erro">A equipe não enviou a ${esc((e.mes_perdido || '').toLowerCase())} e está fora do desafio.</p>` : ''}`
+      : '<p class="erro">A inscrição não foi aprovada até o fim do prazo, então a equipe não participa do desafio.</p>'}
+    <p class="suave">As inscrições terminaram: a equipe não pode mais ser alterada.</p>
+    ${e.eu_lider ? '<p>Você é o líder: é quem envia a carteira de cada mês, na aba <strong>Carteira</strong>.</p>' : '<p>O líder envia a carteira de cada mês. Você acompanha na aba <strong>Carteira</strong>.</p>'}
+  </section>
+  <section class="cartao">
+    <h2>Integrantes (${membros.length})</h2>
+    <ul class="integrantes">${membros.map((m) => `<li class="${m.lider ? 'eh-lider' : ''}">
+      <span class="avatar">${m.foto ? `<img src="${esc(m.foto)}" alt="">` : esc((m.nome || '?').split(' ').map((x) => x[0]).slice(0, 2).join('').toUpperCase())}</span>
+      <div><div class="nome">${esc(m.nome || 'Sem nome')}${m.user_id === eu ? ' <span class="suave" style="font-weight:500">(você)</span>' : ''}
+        ${m.lider ? '<span class="selo-lider">Líder</span>' : ''}</div>
+        <div class="suave">${esc(m.curso)} · ${esc(m.periodo)} per.</div></div>
+      <span></span></li>`).join('')}</ul>
+  </section>`;
+}
+
+function htmlRanking() {
+  return `<section class="cartao">
+    <h2>Ranking do desafio</h2>
+    <p>O ranking começa com a carteira de abril, a partir de <strong>01/04/2027</strong>.</p>
+    <p class="suave">Aqui vão aparecer a posição de cada equipe, a rentabilidade do mês e a acumulada, comparadas com o Ibovespa e o CDI. As teses não aparecem para as outras equipes.</p>
+  </section>`;
+}
+
+function htmlAvisos() {
+  const lista = estado.avisos ?? [];
+  return `<section class="cartao">
+    <h2>Avisos da organização</h2>
+    ${lista.length ? `<ul class="avisos">${lista.map((a) => `<li>
+      <div class="aviso-topo"><strong>${esc(a.titulo)}</strong>${a.so_minha_equipe ? '<span class="selo selo-espera">Só para a sua equipe</span>' : ''}</div>
+      <p class="suave">${dataHora(a.criado_em)}</p>
+      <p class="texto-longo">${esc(a.texto)}</p></li>`).join('')}</ul>`
+    : '<p class="suave">Nenhum aviso por enquanto. Os avisos da organização aparecem aqui.</p>'}
+  </section>`;
+}
+
 function htmlEquipe(gestao) {
   const e = estado.equipe, eu = estado.sessao.user.id;
   const membros = e.integrantes ?? [];
@@ -285,7 +357,8 @@ function htmlEquipe(gestao) {
       <span class="selo ${sitClasse}">${sit}</span>
     </div>
     ${e.situacao === 'recusada' && e.motivo ? `<p class="erro">Motivo: ${esc(e.motivo)}</p>` : ''}
-    ${e.situacao === 'aprovada' ? '<p class="ok">Equipe aprovada! A carteira de abril é enviada de 22 a 31/03/2027.</p>' : `
+    ${e.situacao === 'aprovada' ? `<p class="ok">Inscrição aprovada em ${dataHora(e.aprovada_em)}. A carteira de abril é enviada de 22 a 31/03/2027.</p>
+      ${e.eu_lider ? '<p class="atencao">Qualquer mudança na equipe (entrar, sair, remover ou trocar o líder) volta a inscrição para análise.</p>' : ''}` : `
     <div><p style="font-weight:700;color:var(--marinho)">Para a equipe ser aprovada:</p>
       <ol class="passos">${passos.map(([feito, t]) => `<li class="${feito ? 'feito' : ''}">${t}</li>`).join('')}</ol></div>`}
     ${!gestao ? '<p class="suave">As inscrições terminaram: a equipe não pode mais ser alterada.</p>' : ''}
