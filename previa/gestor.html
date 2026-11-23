@@ -88,14 +88,14 @@ const COMPROVANTE = { pendente: ['Sem comprovante', 'selo-espera'], enviado: ['P
 
 async function carregar() {
   const { data: { session } } = await sb.auth.getSession();
-  if (!session) return desenharEntrada();
-  document.getElementById('topo-direita').innerHTML = '<button class="sair" id="sair">Sair</button>';
-  document.getElementById('sair').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+  if (!session) { location.replace('./'); return; }   // o login é um só: na página de inscrição
+  document.getElementById('topo-direita').innerHTML = '<a class="sair" href="./?participante" style="text-decoration:none">Ver como participante</a> <button class="sair" id="sair">Sair</button>';
+  document.getElementById('sair').onclick = async () => { await sb.auth.signOut(); location.replace('./'); };
   try {
     const situacao = await rpc('desafio_situacao');
     if (!situacao?.gestor) {
       tela.className = 'estreito';
-      tela.innerHTML = '<section class="cartao"><h2>Área só da organização</h2><p>Esta conta não é a do gestor. <a href="./">Voltar para a inscrição</a>.</p></section>';
+      tela.innerHTML = '<section class="cartao"><h2>Área só da organização</h2><p>Esta conta não é a do gestor. <a href="./">Ir para a inscrição</a>.</p></section>';
       return;
     }
     const [equipes, ies, testadores] = await Promise.all([
@@ -108,24 +108,6 @@ async function carregar() {
   desenhar();
 }
 
-function desenharEntrada() {
-  tela.className = 'estreito';
-  tela.innerHTML = `<form class="cartao" id="entrar">
-    <h2>Área da organização</h2>
-    <p class="suave">Entre com a conta de gestor do BolsaLab.</p>
-    <label>E-mail <input type="email" name="email" autocomplete="email" required></label>
-    <label>Senha <input type="password" name="senha" autocomplete="current-password" required></label>
-    <p id="erro" class="erro" hidden></p>
-    <button class="botao botao-principal">Entrar</button>
-  </form>`;
-  document.getElementById('entrar').onsubmit = async (ev) => {
-    ev.preventDefault();
-    const f = new FormData(ev.target);
-    const { error } = await sb.auth.signInWithPassword({ email: String(f.get('email')).trim(), password: String(f.get('senha')) });
-    if (error) { const p = document.getElementById('erro'); p.textContent = 'E-mail ou senha incorretos.'; p.hidden = false; return; }
-    carregar();
-  };
-}
 
 // ---------------------------------------------------------------- situação de cada equipe
 function analisar(e) {

@@ -60,6 +60,8 @@ async function carregar() {
       rpc('desafio_meus_convites').catch(() => []),
     ]);
     Object.assign(estado, { situacao, equipe, ies, perfil, convites: convites ?? [] });
+    // um login só: o gestor vai direto para a área da organização (a não ser que peça para ver como participante)
+    if (situacao?.gestor && !params.has('participante')) { location.replace('gestor.html'); return; }
   } catch (e) {
     estado.recado = msgErro(e);
   }
@@ -75,7 +77,7 @@ function desenhar() {
       <button data-aba-topo="equipe" aria-current="${s.abaTopo !== 'carteira' ? 'page' : 'false'}">Equipe</button>
       <button data-aba-topo="carteira" aria-current="${s.abaTopo === 'carteira' ? 'page' : 'false'}">Carteira</button></nav>` : '';
   topoDireita.innerHTML = s.sessao
-    ? `${abas}${s.situacao?.testador && !s.situacao?.liberado ? '<span class="faixa-teste">MODO TESTE</span> ' : ''}<button class="sair" id="sair">Sair</button>`
+    ? `${abas}${s.situacao?.testador && !s.situacao?.liberado ? '<span class="faixa-teste">MODO TESTE</span> ' : ''}${s.situacao?.gestor ? '<a class="sair" href="gestor.html" style="text-decoration:none">Organização</a> ' : ''}<button class="sair" id="sair">Sair</button>`
     : '';
   topoDireita.querySelectorAll('[data-aba-topo]').forEach((b) => b.addEventListener('click', () => { s.abaTopo = b.dataset.abaTopo; desenhar(); }));
   document.getElementById('sair')?.addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
