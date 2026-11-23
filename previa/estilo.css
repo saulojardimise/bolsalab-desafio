@@ -196,3 +196,9 @@ textarea:focus { outline: 3px solid color-mix(in srgb, var(--verde) 35%, transpa
 @media (min-width: 900px) { #topo-direita { flex-wrap: nowrap; } .faixa-teste { white-space: nowrap; } }
 .atencao { background: var(--ambar-fundo); color: var(--ambar-texto); padding: 8px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; }
 .abas-topo button { white-space: nowrap; }
+/* faixa do topo fica parada ao rolar a página */
+.topo { position: sticky; top: 0; z-index: 30; box-shadow: 0 2px 12px rgb(0 0 0 / .18); }
+main { position: relative; z-index: 1; }
+/* no celular, com as abas, o título some da faixa para ela não ocupar a tela */
+@media (max-width: 899px) { body.com-abas .topo-titulo { display: none; } body.com-abas .topo { padding-bottom: 12px; } body.com-abas main { margin-top: 12px; } }
+@media (max-width: 899px) { .topo-dentro { position: relative; } #sair { position: absolute; top: 0; right: 0; } }
