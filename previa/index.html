@@ -119,7 +119,12 @@ function desenhar() {
     try { localStorage.setItem('desafio:avisos-vistos', String(Math.max(0, ...(s.avisos ?? []).map((a) => a.id)))); } catch { /* segue */ }
     return;
   }
-  if (s.equipe && !emGestao()) { colunas(2); tela.innerHTML = recado + htmlEquipeFechada(); return; }
+  if (s.equipe && !emGestao()) {
+    colunas(2); tela.innerHTML = recado + htmlEquipeFechada();
+    tela.querySelectorAll('[data-lider]').forEach((b) => b.addEventListener('click', () =>
+      confirmarDuasVezes(b, 'Confirmar?', () => acao(() => rpc('desafio_passar_lideranca', { p_user_id: b.dataset.lider }), 'Liderança passada.'))));
+    return;
+  }
   if (s.equipe) { colunas(3); tela.innerHTML = recado + htmlEquipe(true); ligarEquipe(); ligarCpf(); return; }
   if (!podeAgir) {
     const inicio = s.situacao ? new Date(s.situacao.inscricoes_inicio).toLocaleDateString('pt-BR') : '01/02/2027';
@@ -313,8 +318,10 @@ function htmlEquipeFechada() {
       <span class="avatar">${m.foto ? `<img src="${esc(m.foto)}" alt="">` : esc((m.nome || '?').split(' ').map((x) => x[0]).slice(0, 2).join('').toUpperCase())}</span>
       <div><div class="nome">${esc(m.nome || 'Sem nome')}${m.user_id === eu ? ' <span class="suave" style="font-weight:500">(você)</span>' : ''}
         ${m.lider ? '<span class="selo-lider">Líder</span>' : ''}</div>
-        <div class="suave">${esc(m.curso)} · ${esc(m.periodo)} per.</div></div>
+        <div class="suave">${esc(m.curso)} · ${esc(m.periodo)} per.</div>
+        ${e.eu_lider && m.user_id !== eu ? `<div class="acoes-membro"><button class="botao-link" data-lider="${m.user_id}">Passar liderança</button></div>` : ''}</div>
       <span></span></li>`).join('')}</ul>
+    ${e.eu_lider && membros.length > 1 ? '<p class="suave">A liderança pode ser passada a qualquer momento. Quem for líder envia as carteiras.</p>' : ''}
   </section>`;
 }
 
@@ -358,7 +365,7 @@ function htmlEquipe(gestao) {
     </div>
     ${e.situacao === 'recusada' && e.motivo ? `<p class="erro">Motivo: ${esc(e.motivo)}</p>` : ''}
     ${e.situacao === 'aprovada' ? `<p class="ok">Inscrição aprovada em ${dataHora(e.aprovada_em)}. A carteira de abril é enviada de 22 a 31/03/2027.</p>
-      ${e.eu_lider ? '<p class="atencao">Qualquer mudança na equipe (entrar, sair, remover ou trocar o líder) volta a inscrição para análise.</p>' : ''}` : `
+      ${e.eu_lider ? '<p class="atencao">Qualquer mudança de integrantes (entrar, sair ou remover) volta a inscrição para análise. Trocar o líder não.</p>' : ''}` : `
     <div><p style="font-weight:700;color:var(--marinho)">Para a equipe ser aprovada:</p>
       <ol class="passos">${passos.map(([feito, t]) => `<li class="${feito ? 'feito' : ''}">${t}</li>`).join('')}</ol></div>`}
     ${!gestao ? '<p class="suave">As inscrições terminaram: a equipe não pode mais ser alterada.</p>' : ''}
