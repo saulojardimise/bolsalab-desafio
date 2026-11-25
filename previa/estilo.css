@@ -212,3 +212,18 @@ main { position: relative; z-index: 1; }
 .sugestoes-ativo em { font-style: normal; font-size: 12px; color: var(--suave); }
 .erro-ativo { margin: 6px 0 0; font-size: 13px; font-weight: 600; color: var(--vermelho); }
 .erro-ativo[hidden] { display: none; }
+/* celular: enquanto digita (teclado aberto), a faixa do topo deixa de ficar fixa para sobrar tela */
+@media (max-width: 899px) {
+  body:has(main input:focus, main textarea:focus, main select:focus) .topo { position: relative; box-shadow: none; }
+  .topo { padding-top: 10px; }
+  .topo img { height: 22px; }
+  #sair { padding: 4px 10px; font-size: 13px; }
+  .abas-topo button { padding: 6px 2px; font-size: 13px; }
+  .faixa-teste { font-size: 10px; padding: 2px 8px; }
+  .simular { min-height: 28px; font-size: 12px; padding: 2px 6px; }
+  #topo-direita { gap: 6px; }
+  input, textarea, select { scroll-margin: 90px 0 140px; }
+  .posicoes li { grid-template-columns: 1fr 72px 14px; }
+  .posicao-abrir { padding: 6px; }
+}
+@media (max-width: 899px) { main.carteira-grade .cartao { padding: 14px; } .carteira-cabeca select { min-height: 38px; font-size: 15px; } }

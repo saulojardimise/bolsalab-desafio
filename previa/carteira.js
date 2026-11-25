@@ -153,7 +153,7 @@ function htmlCarteira() {
       </li>`; }).join('')}</ul>
     ${cart.posicoes.length < LIMITE.ativos[1] ? `<div class="busca-ativo">
       <label for="novo-ativo" class="sr">Adicionar ativo</label>
-      <input id="novo-ativo" type="search" placeholder="+ Adicionar ativo: código ou nome (ex.: VALE3, Petrobras)" autocomplete="off" autocapitalize="characters" spellcheck="false">
+      <input id="novo-ativo" type="search" placeholder="+ Adicionar ativo (código ou nome)" autocomplete="off" autocapitalize="characters" spellcheck="false">
       <ul id="sugestoes-ativo" class="sugestoes-ativo" role="listbox" hidden></ul>
       <p id="erro-ativo" class="erro-ativo" role="alert" hidden></p>
     </div>` : '<p class="suave">Já são 7 ativos, o máximo.</p>'}
