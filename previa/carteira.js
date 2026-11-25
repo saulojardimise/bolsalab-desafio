@@ -153,9 +153,9 @@ function htmlCarteira() {
       </li>`; }).join('')}</ul>
     ${cart.posicoes.length < LIMITE.ativos[1] ? `<div class="busca-ativo">
       <label for="novo-ativo" class="sr">Adicionar ativo</label>
-      <input id="novo-ativo" list="lista-ativos" placeholder="+ Adicionar ativo (ex.: PETR4, BOVA11, WIN)" autocomplete="off">
-      <datalist id="lista-ativos">${cart.ativos.filter((a) => !cart.posicoes.some((x) => x.ativo === a.ticker))
-        .map((a) => `<option value="${esc(a.ticker)}">${esc(a.nome)} · ${CLASSES[a.tipo] ?? a.tipo}</option>`).join('')}</datalist>
+      <input id="novo-ativo" type="search" placeholder="+ Adicionar ativo: código ou nome (ex.: VALE3, Petrobras)" autocomplete="off" autocapitalize="characters" spellcheck="false">
+      <ul id="sugestoes-ativo" class="sugestoes-ativo" role="listbox" hidden></ul>
+      <p id="erro-ativo" class="erro-ativo" role="alert" hidden></p>
     </div>` : '<p class="suave">Já são 7 ativos, o máximo.</p>'}
     <button class="posicao-abrir cenario-abrir ${sel === 'cenario' ? 'ativa' : ''}" data-sel="cenario">
       <strong>Cenário econômico e impacto na carteira</strong>
@@ -252,18 +252,43 @@ function ligarCarteira() {
   tirar?.addEventListener('click', () => confirmarDuasVezes(tirar, 'Tirar mesmo?', () => {
     cart.posicoes.splice(cart.sel, 1); cart.sel = cart.posicoes.length ? 0 : 'cenario'; guardarRascunho(); desenhar();
   }));
+  // busca do ativo: lista própria (o datalist não funciona bem no celular) e o erro aparece logo abaixo do campo
   const novo = document.getElementById('novo-ativo');
-  const adicionar = () => {
-    const t = novo.value.trim().toUpperCase().split(/\s/)[0];
-    if (!t) return;
-    if (!cart.ativos.some((a) => a.ticker === t)) { estado.recado = `${t} não está disponível no BolsaLab.`; return desenhar(); }
-    if (cart.posicoes.some((x) => x.ativo === t)) { estado.recado = `${t} já está na carteira.`; return desenhar(); }
-    cart.posicoes.push({ ativo: t, lado: 'comprado', peso: '', tese: '' });
+  const lista = document.getElementById('sugestoes-ativo'), erroAtivo = document.getElementById('erro-ativo');
+  const normal = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+  const achar = (texto) => {
+    const t = normal(texto).trim();
+    if (!t) return [];
+    const livres = cart.ativos.filter((a) => !cart.posicoes.some((x) => x.ativo === a.ticker));
+    return livres.filter((a) => a.ticker.startsWith(t) || normal(a.nome).includes(t))
+      .sort((a, b) => (b.ticker === t) - (a.ticker === t) || (b.ticker.startsWith(t)) - (a.ticker.startsWith(t)) || a.ticker.localeCompare(b.ticker))
+      .slice(0, 6);
+  };
+  const mostrarErro = (msg) => { erroAtivo.textContent = msg; erroAtivo.hidden = !msg; };
+  const adicionar = (ticker) => {
+    if (cart.posicoes.some((x) => x.ativo === ticker)) return mostrarErro(`${ticker} já está na carteira.`);
+    cart.posicoes.push({ ativo: ticker, lado: 'comprado', peso: '', tese: '' });
     cart.sel = cart.posicoes.length - 1; guardarRascunho(); desenhar();
     tela.querySelector(`[data-peso="${cart.sel}"]`)?.focus();
   };
-  novo?.addEventListener('change', adicionar);
-  novo?.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); adicionar(); } });
+  novo?.addEventListener('input', () => {
+    mostrarErro('');
+    const achados = achar(novo.value);
+    lista.innerHTML = achados.map((a) => `<li><button type="button" data-ticker="${esc(a.ticker)}">
+      <strong>${esc(a.ticker)}</strong><span>${esc(a.nome)}</span><em>${CLASSES[a.tipo] ?? ''}</em></button></li>`).join('');
+    lista.hidden = !achados.length;
+    if (!achados.length && novo.value.trim().length >= 3) mostrarErro(`Nenhum ativo do BolsaLab com "${novo.value.trim()}". Confira o código (ex.: VALE3, não VALE5).`);
+    lista.querySelectorAll('[data-ticker]').forEach((b) => b.addEventListener('click', () => adicionar(b.dataset.ticker)));
+  });
+  novo?.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter') return;
+    ev.preventDefault();
+    const t = normal(novo.value).trim(), achados = achar(novo.value);
+    const exato = cart.ativos.find((a) => a.ticker === t);
+    if (exato) return adicionar(exato.ticker);
+    if (achados.length === 1) return adicionar(achados[0].ticker);
+    mostrarErro(achados.length ? 'Toque no ativo certo na lista.' : `${t || 'Esse código'} não está disponível no BolsaLab.`);
+  });
   document.getElementById('salvar-rascunho')?.addEventListener('click', salvarNoServidor);
   pintarRascunho();
   document.getElementById('enviar-carteira')?.addEventListener('click', async (ev) => {

@@ -202,3 +202,13 @@ main { position: relative; z-index: 1; }
 /* no celular, com as abas, o título some da faixa para ela não ocupar a tela */
 @media (max-width: 899px) { body.com-abas .topo-titulo { display: none; } body.com-abas .topo { padding-bottom: 12px; } body.com-abas main { margin-top: 12px; } }
 @media (max-width: 899px) { .topo-dentro { position: relative; } #sair { position: absolute; top: 0; right: 0; } }
+.busca-ativo { position: relative; }
+.sugestoes-ativo { list-style: none; margin: 6px 0 0; padding: 4px; border: 1.5px solid var(--linha); border-radius: 12px; background: var(--cartao); box-shadow: var(--sombra); display: grid; gap: 2px; }
+.sugestoes-ativo[hidden] { display: none; }
+.sugestoes-ativo button { width: 100%; font: inherit; text-align: left; background: none; border: 0; border-radius: 8px; padding: 10px; display: grid; grid-template-columns: 70px 1fr auto; gap: 8px; align-items: baseline; color: var(--texto); cursor: pointer; }
+.sugestoes-ativo button:hover, .sugestoes-ativo button:focus-visible { background: var(--verde-fundo); }
+.sugestoes-ativo strong { color: var(--marinho); }
+.sugestoes-ativo span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.sugestoes-ativo em { font-style: normal; font-size: 12px; color: var(--suave); }
+.erro-ativo { margin: 6px 0 0; font-size: 13px; font-weight: 600; color: var(--vermelho); }
+.erro-ativo[hidden] { display: none; }
