@@ -227,3 +227,5 @@ main { position: relative; z-index: 1; }
   .posicao-abrir { padding: 6px; }
 }
 @media (max-width: 899px) { main.carteira-grade .cartao { padding: 14px; } .carteira-cabeca select { min-height: 38px; font-size: 15px; } }
+/* no iPhone, campo com letra menor que 16px faz a tela dar zoom ao tocar */
+@media (max-width: 899px) { input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: max(16px, 1em) !important; } }
